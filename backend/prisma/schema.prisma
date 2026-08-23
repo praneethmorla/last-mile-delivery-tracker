@@ -1,0 +1,152 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  name         String
+  role         String        // "ADMIN", "CUSTOMER", "AGENT"
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  // Relations
+  agentProfile AgentProfile?
+  orders       Order[]       @relation("CustomerOrders")
+  timelineLogs OrderTimeline[]
+}
+
+model AgentProfile {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentZoneId String?
+  currentZone   Zone?    @relation(fields: [currentZoneId], references: [id], onDelete: SetNull)
+  currentLat    Float?
+  currentLng    Float?
+  isAvailable   Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orders        Order[]  @relation("AgentOrders")
+}
+
+model Zone {
+  id          String   @id @default(uuid())
+  name        String   @unique // e.g., "Zone A", "Zone B"
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  areas         Area[]
+  agentProfiles AgentProfile[]
+  
+  rateCardsFrom RateCard[] @relation("FromZone")
+  rateCardsTo   RateCard[] @relation("ToZone")
+}
+
+model Area {
+  id         String   @id @default(uuid())
+  postalCode String   @unique // e.g., "110001" or "560001"
+  name       String   // e.g., "Connaught Place", "Indiranagar"
+  zoneId     String
+  zone       Zone     @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  pickupOrders Order[] @relation("PickupArea")
+  dropOrders   Order[] @relation("DropArea")
+}
+
+model RateCard {
+  id           String   @id @default(uuid())
+  fromZoneId   String
+  fromZone     Zone     @relation("FromZone", fields: [fromZoneId], references: [id], onDelete: Cascade)
+  toZoneId     String
+  toZone       Zone     @relation("ToZone", fields: [toZoneId], references: [id], onDelete: Cascade)
+  orderType    String   // "B2B" or "B2C"
+  baseCharge   Float    // Base price for delivery
+  ratePerKg    Float    // Price per kg above base / rate per kg total
+  codSurcharge Float    // Fixed surcharge or percentage
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([fromZoneId, toZoneId, orderType])
+}
+
+model Order {
+  id               String   @id @default(uuid())
+  customerId       String
+  customer         User     @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: Cascade)
+  pickupAddress    String
+  pickupAreaId     String
+  pickupArea       Area     @relation("PickupArea", fields: [pickupAreaId], references: [id])
+  dropAddress      String
+  dropAreaId       String
+  dropArea         Area     @relation("DropArea", fields: [dropAreaId], references: [id])
+  
+  // Package dimensions and weight
+  length           Float    // in cm
+  width            Float    // in cm
+  height           Float    // in cm
+  actualWeight     Float    // in kg
+  volumetricWeight Float    // in kg (L*W*H / 5000)
+  chargeableWeight Float    // in kg max(actualWeight, volumetricWeight)
+  
+  orderType        String   // "B2B" or "B2C"
+  paymentType      String   // "PREPAID" or "COD"
+  
+  // Pricing breakdown
+  codSurcharge     Float    @default(0.0)
+  deliveryCharge   Float
+  totalCharge      Float
+  
+  // Order status
+  status           String   @default("PENDING") 
+  // "PENDING", "ASSIGNED", "PICKED_UP", "IN_TRANSIT", "OUT_FOR_DELIVERY", "DELIVERED", "FAILED", "RESCHEDULED"
+  
+  // Agent Assignment
+  agentId          String?
+  agent            AgentProfile? @relation("AgentOrders", fields: [agentId], references: [id], onDelete: SetNull)
+  
+  // Failed & Reschedule flow
+  rescheduleDate     DateTime?
+  rescheduleAttempts Int       @default(0)
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Timeline & Notifications
+  timelines     OrderTimeline[]
+  notifications NotificationLog[]
+}
+
+model OrderTimeline {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    String
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorRole String   // "ADMIN", "CUSTOMER", "AGENT", "SYSTEM"
+  notes     String?
+  timestamp DateTime @default(now())
+}
+
+model NotificationLog {
+  id             String   @id @default(uuid())
+  orderId        String
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  recipientEmail String
+  type           String   // "EMAIL", "SMS"
+  status         String   // "SENT", "FAILED"
+  subject        String
+  body           String
+  sentAt         DateTime @default(now())
+}

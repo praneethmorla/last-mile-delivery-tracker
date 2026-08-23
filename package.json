@@ -1,0 +1,24 @@
+{
+  "name": "last-mile-delivery-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build:backend": "npm run build --workspace=backend",
+    "build": "npm run build:frontend && npm run build:backend",
+    "start": "npm start --workspace=backend",
+    "test": "npm test --workspace=backend"
+  },
+  "Description": "Root package.json for workspaces setup",
+  "Overwrite": true,
+  "TargetFile": "c:\\Users\\prane\\OneDrive\\Desktop\\RAGAI\\EducationAI\\Unthinkable\\package.json",
+  "toolAction": "Write root package.json",
+  "toolSummary": "Write root package.json file"
+}
