@@ -18,7 +18,9 @@ import {
   Map,
   Users,
   Coins,
-  Inbox
+  Inbox,
+  Package,
+  Calculator
 } from 'lucide-react';
 
 interface Zone {
@@ -87,7 +89,7 @@ export default function AdminDashboard() {
   const { token } = useAuth();
 
   // Navigation
-  const [activeTab, setActiveTab] = useState<'orders' | 'zones' | 'rates' | 'agents'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'zones' | 'rates' | 'agents' | 'book'>('orders');
 
   // Master Data State
   const [zones, setZones] = useState<Zone[]>([]);
@@ -128,6 +130,22 @@ export default function AdminDashboard() {
   const [overrideStatus, setOverrideStatus] = useState('');
   const [overrideNotes, setOverrideNotes] = useState('');
 
+  // Admin Booking on Behalf of Customer form state
+  const [bookCustomerEmail, setBookCustomerEmail] = useState('');
+  const [bookPickupAddress, setBookPickupAddress] = useState('');
+  const [bookPickupAreaId, setBookPickupAreaId] = useState('');
+  const [bookDropAddress, setBookDropAddress] = useState('');
+  const [bookDropAreaId, setBookDropAreaId] = useState('');
+  const [bookLength, setBookLength] = useState(10);
+  const [bookWidth, setBookWidth] = useState(10);
+  const [bookHeight, setBookHeight] = useState(10);
+  const [bookActualWeight, setBookActualWeight] = useState(1);
+  const [bookOrderType, setBookOrderType] = useState<'B2B' | 'B2C'>('B2C');
+  const [bookPaymentType, setBookPaymentType] = useState<'PREPAID' | 'COD'>('PREPAID');
+  const [bookPreview, setBookPreview] = useState<any>(null);
+  const [bookPreviewError, setBookPreviewError] = useState('');
+  const [bookLoading, setBookLoading] = useState(false);
+
   // Fetch helper loaders
   useEffect(() => {
     fetchZones();
@@ -159,8 +177,10 @@ export default function AdminDashboard() {
     if (res.ok) {
       const data = await res.json();
       setAreas(data);
-      if (data.length > 0 && !newAreaZoneId) {
-        setNewAreaZoneId(data[0].zoneId);
+      if (data.length > 0) {
+        if (!newAreaZoneId) setNewAreaZoneId(data[0].zoneId);
+        if (!bookPickupAreaId) setBookPickupAreaId(data[0].id);
+        if (!bookDropAreaId) setBookDropAreaId(data[0].id);
       }
     }
   };
@@ -326,6 +346,90 @@ export default function AdminDashboard() {
     }
   };
 
+  // Admin Rate Preview
+  const handleAdminPreviewPrice = async () => {
+    if (!bookPickupAreaId || !bookDropAreaId) return;
+    setBookPreviewError('');
+    try {
+      const res = await fetch('/api/customer/orders/preview', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          pickupAreaId: bookPickupAreaId,
+          dropAreaId: bookDropAreaId,
+          length: bookLength,
+          width: bookWidth,
+          height: bookHeight,
+          actualWeight: bookActualWeight,
+          orderType: bookOrderType,
+          paymentType: bookPaymentType,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Preview failed.');
+      setBookPreview(data);
+    } catch (err: any) {
+      setBookPreviewError(err.message);
+      setBookPreview(null);
+    }
+  };
+
+  useEffect(() => {
+    if (bookPickupAreaId && bookDropAreaId) {
+      handleAdminPreviewPrice();
+    }
+  }, [bookPickupAreaId, bookDropAreaId, bookLength, bookWidth, bookHeight, bookActualWeight, bookOrderType, bookPaymentType]);
+
+  // Admin places order on behalf of customer
+  const handleAdminPlaceOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bookPreview) return;
+    setBookLoading(true);
+
+    try {
+      const res = await fetch('/api/admin/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          customerEmail: bookCustomerEmail,
+          pickupAddress: bookPickupAddress,
+          pickupAreaId: bookPickupAreaId,
+          dropAddress: bookDropAddress,
+          dropAreaId: bookDropAreaId,
+          length: bookLength,
+          width: bookWidth,
+          height: bookHeight,
+          actualWeight: bookActualWeight,
+          orderType: bookOrderType,
+          paymentType: bookPaymentType,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Booking failed.');
+
+      // Reset
+      setBookCustomerEmail('');
+      setBookPickupAddress('');
+      setBookDropAddress('');
+      setBookPreview(null);
+      
+      showSuccess(`Order placed successfully on behalf of ${bookCustomerEmail}!`);
+      fetchOrders();
+      setActiveTab('orders');
+    } catch (err: any) {
+      showError(err.message || 'Failed to place order.');
+    } finally {
+      setBookLoading(false);
+    }
+  };
+
   // Initialize form defaults once zones are fetched
   useEffect(() => {
     if (zones.length > 0) {
@@ -425,6 +529,14 @@ export default function AdminDashboard() {
             Orders
           </button>
           <button
+            onClick={() => setActiveTab('book')}
+            className={`px-4 py-1.5 rounded-md transition ${
+              activeTab === 'book' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Book Shipment
+          </button>
+          <button
             onClick={() => setActiveTab('zones')}
             className={`px-4 py-1.5 rounded-md transition ${
               activeTab === 'zones' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
@@ -484,7 +596,7 @@ export default function AdminDashboard() {
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="px-2 py-1 border rounded text-xs bg-white text-gray-700 font-semibold"
+                  className="px-2 py-1 border rounded text-xs bg-white text-gray-700 font-semibold focus:outline-none"
                 >
                   <option value="">All Statuses</option>
                   <option value="PENDING">Pending</option>
@@ -500,7 +612,7 @@ export default function AdminDashboard() {
                 <select
                   value={filterZone}
                   onChange={(e) => setFilterZone(e.target.value)}
-                  className="px-2 py-1 border rounded text-xs bg-white text-gray-700 font-semibold"
+                  className="px-2 py-1 border rounded text-xs bg-white text-gray-700 font-semibold focus:outline-none"
                 >
                   <option value="">All Zones</option>
                   {zones.map((z) => (
@@ -512,7 +624,7 @@ export default function AdminDashboard() {
                 <select
                   value={filterAgent}
                   onChange={(e) => setFilterAgent(e.target.value)}
-                  className="px-2 py-1 border rounded text-xs bg-white text-gray-700 font-semibold"
+                  className="px-2 py-1 border rounded text-xs bg-white text-gray-700 font-semibold focus:outline-none"
                 >
                   <option value="">All Agents</option>
                   {agents.map((a) => (
@@ -707,6 +819,221 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* BOOK ON BEHALF TAB */}
+      {/* ==================================================== */}
+      {activeTab === 'book' && (
+        <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-200 animate-fadeIn">
+          <div className="flex items-center space-x-2.5 mb-6 border-b border-gray-100 pb-3">
+            <Package className="h-6 w-6 text-indigo-600" />
+            <h2 className="text-xl font-bold text-gray-800">Book Shipment on Behalf of Customer</h2>
+          </div>
+
+          <form onSubmit={handleAdminPlaceOrder} className="space-y-5">
+            {/* Customer Email Input */}
+            <div className="p-4 bg-indigo-50/40 border border-indigo-100 rounded-xl space-y-2">
+              <label className="block text-xs font-bold text-indigo-900 uppercase tracking-wider">Customer Email Address</label>
+              <input
+                type="email"
+                required
+                value={bookCustomerEmail}
+                onChange={(e) => setBookCustomerEmail(e.target.value)}
+                placeholder="E.g., client@retailgroup.com"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:border-transparent transition"
+              />
+              <p className="text-[10px] text-gray-400">
+                If the email is not registered, a new Customer profile will be automatically generated and linked.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Pickup details */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">1. Pickup Information</h3>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Pickup Address</label>
+                  <input
+                    type="text"
+                    required
+                    value={bookPickupAddress}
+                    onChange={(e) => setBookPickupAddress(e.target.value)}
+                    placeholder="E.g., 123 Alpha Road, Apartment 4B"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:border-transparent transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Pickup Area (Postal Code)</label>
+                  <select
+                    value={bookPickupAreaId}
+                    onChange={(e) => setBookPickupAreaId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none"
+                  >
+                    {areas.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.postalCode} - {a.name} ({a.zone.name})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Drop details */}
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">2. Drop Information</h3>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Drop Address</label>
+                  <input
+                    type="text"
+                    required
+                    value={bookDropAddress}
+                    onChange={(e) => setBookDropAddress(e.target.value)}
+                    placeholder="E.g., 456 Omega Street, Office 12"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:border-transparent transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Drop Area (Postal Code)</label>
+                  <select
+                    value={bookDropAreaId}
+                    onChange={(e) => setBookDropAreaId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none"
+                  >
+                    {areas.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.postalCode} - {a.name} ({a.zone.name})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <hr className="border-gray-100" />
+
+            {/* Package stats */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">3. Package Statistics</h3>
+              
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Length (cm)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={bookLength}
+                    onChange={(e) => setBookLength(parseInt(e.target.value) || 0)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Width (cm)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={bookWidth}
+                    onChange={(e) => setBookWidth(parseInt(e.target.value) || 0)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Height (cm)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={bookHeight}
+                    onChange={(e) => setBookHeight(parseInt(e.target.value) || 0)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Weight (kg)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0.1"
+                    required
+                    value={bookActualWeight}
+                    onChange={(e) => setBookActualWeight(parseFloat(e.target.value) || 0)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Order Category</label>
+                  <select
+                    value={bookOrderType}
+                    onChange={(e) => setBookOrderType(e.target.value as 'B2B' | 'B2C')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                  >
+                    <option value="B2C">B2C (Retail)</option>
+                    <option value="B2B">B2B (Enterprise)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Payment Method</label>
+                  <select
+                    value={bookPaymentType}
+                    onChange={(e) => setBookPaymentType(e.target.value as 'PREPAID' | 'COD')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                  >
+                    <option value="PREPAID">Prepaid</option>
+                    <option value="COD">Cash On Delivery (COD)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* LIVE RATE PREVIEW PANEL */}
+            <div className="bg-indigo-50/50 border border-indigo-200 p-5 rounded-xl space-y-3">
+              <div className="flex items-center space-x-1.5 text-indigo-900 font-bold text-sm">
+                <Calculator className="h-5 w-5 text-indigo-600" />
+                <span>Live Calculated Charge Breakdown</span>
+              </div>
+              {bookPreviewError && <p className="text-red-600 text-xs font-semibold">{bookPreviewError}</p>}
+              {bookPreview ? (
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs text-gray-700 border-t border-indigo-200/60 pt-2.5">
+                  <div className="flex justify-between">
+                    <span>Volumetric Weight:</span>
+                    <strong className="text-gray-900">{bookPreview.volumetricWeight.toFixed(2)} kg</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Chargeable Weight:</span>
+                    <strong className="text-gray-900">{bookPreview.chargeableWeight.toFixed(2)} kg</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Route base & rate charge:</span>
+                    <strong className="text-gray-900">₹{bookPreview.deliveryCharge.toFixed(2)}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>COD Fee:</span>
+                    <strong className="text-gray-900">₹{bookPreview.codSurcharge.toFixed(2)}</strong>
+                  </div>
+                  <div className="flex justify-between col-span-2 text-sm font-bold text-indigo-900 border-t border-indigo-200 pt-2">
+                    <span>Total Billable Cost:</span>
+                    <span>₹{bookPreview.totalCharge.toFixed(2)}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-400 text-xs">Fill out pickup and destination zones to estimate charges.</p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={bookLoading || !bookPreview || !bookCustomerEmail}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-indigo-100 disabled:opacity-50 transition"
+            >
+              {bookLoading ? 'Processing Booking...' : 'Confirm Shipment Booking'}
+            </button>
+          </form>
         </div>
       )}
 
