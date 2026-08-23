@@ -48,6 +48,10 @@ export default function AgentDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   
+  // Notification State
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
   // Update inputs
   const [newStatus, setNewStatus] = useState('');
   const [notes, setNotes] = useState('');
@@ -62,6 +66,18 @@ export default function AgentDashboard() {
     fetchProfile();
     fetchOrders();
   }, []);
+
+  const showSuccess = (msg: string) => {
+    setSuccessMsg(msg);
+    setErrorMsg('');
+    setTimeout(() => setSuccessMsg(''), 5000);
+  };
+
+  const showError = (msg: string) => {
+    setErrorMsg(msg);
+    setSuccessMsg('');
+    setTimeout(() => setErrorMsg(''), 5000);
+  };
 
   const fetchProfile = async () => {
     try {
@@ -124,11 +140,10 @@ export default function AgentDashboard() {
       const data = await res.json();
       setProfile(data);
       setEditingLoc(false);
-      alert('Location coordinates updated successfully!');
-      // Re-trigger order reload
+      showSuccess('Location coordinates updated successfully!');
       fetchOrders();
     } catch (e) {
-      alert('Failed to update coordinates.');
+      showError('Failed to update coordinates.');
     }
   };
 
@@ -150,14 +165,14 @@ export default function AgentDashboard() {
 
       if (!res.ok) throw new Error(data.error || 'Update failed.');
 
-      alert(`Order status updated to ${newStatus}!`);
+      showSuccess(`Order status updated to ${newStatus}!`);
       setNewStatus('');
       setNotes('');
       setSelectedOrder(null);
       fetchOrders();
-      fetchProfile(); // Profile availability might update
+      fetchProfile();
     } catch (err: any) {
-      alert(err.message || 'Failed to update order.');
+      showError(err.message || 'Failed to update order.');
     } finally {
       setLoading(false);
     }
@@ -218,6 +233,20 @@ export default function AgentDashboard() {
           </div>
         )}
       </div>
+
+      {/* SUCCESS / ERROR INLINE ALERTS */}
+      {successMsg && (
+        <div className="bg-green-50 text-green-800 px-4 py-3 rounded-lg border border-green-200 text-sm font-semibold flex items-center transition shadow-sm animate-fadeIn">
+          <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+          <span>{successMsg}</span>
+        </div>
+      )}
+      {errorMsg && (
+        <div className="bg-red-50 text-red-800 px-4 py-3 rounded-lg border border-red-200 text-sm font-semibold flex items-center transition shadow-sm animate-fadeIn">
+          <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
@@ -312,7 +341,7 @@ export default function AgentDashboard() {
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <div className="flex items-center space-x-2 mb-4 border-b border-gray-100 pb-3">
               <Truck className="h-5 w-5 text-green-600" />
-              <h2 className="text-lg font-bold text-gray-800">Your Assigned Deliveries ({orders.length})</h2>
+              <h2 className="text-lg font-bold text-gray-800 font-sans">Your Assigned Deliveries ({orders.length})</h2>
             </div>
 
             <div className="overflow-x-auto">

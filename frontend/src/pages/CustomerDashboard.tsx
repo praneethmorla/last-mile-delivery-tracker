@@ -71,6 +71,10 @@ export default function CustomerDashboard() {
   const [rescheduleSuccess, setRescheduleSuccess] = useState('');
   const [rescheduleError, setRescheduleError] = useState('');
 
+  // Inline Notification State
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
   // Form Fields
   const [pickupAddress, setPickupAddress] = useState('');
   const [pickupAreaId, setPickupAreaId] = useState('');
@@ -93,6 +97,18 @@ export default function CustomerDashboard() {
     fetchAreas();
     fetchOrders();
   }, []);
+
+  const showSuccess = (msg: string) => {
+    setSuccessMsg(msg);
+    setErrorMsg('');
+    setTimeout(() => setSuccessMsg(''), 5000);
+  };
+
+  const showError = (msg: string) => {
+    setErrorMsg(msg);
+    setSuccessMsg('');
+    setTimeout(() => setErrorMsg(''), 5000);
+  };
 
   const fetchAreas = async () => {
     try {
@@ -218,9 +234,9 @@ export default function CustomerDashboard() {
       
       // Switch tab to History
       setActiveSubTab('history');
-      alert('Order placed successfully! Redirecting you to the tracking page.');
+      showSuccess('Order placed successfully! Redirecting you to the tracking page.');
     } catch (err: any) {
-      alert(err.message || 'Failed to place order.');
+      showError(err.message || 'Failed to place order.');
     } finally {
       setBookingLoading(false);
     }
@@ -303,6 +319,20 @@ export default function CustomerDashboard() {
           </button>
         </div>
       </div>
+
+      {/* SUCCESS / ERROR INLINE ALERTS */}
+      {successMsg && (
+        <div className="bg-green-50 text-green-800 px-4 py-3 rounded-lg border border-green-200 text-sm font-semibold flex items-center transition shadow-sm animate-fadeIn">
+          <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+          <span>{successMsg}</span>
+        </div>
+      )}
+      {errorMsg && (
+        <div className="bg-red-50 text-red-800 px-4 py-3 rounded-lg border border-red-200 text-sm font-semibold flex items-center transition shadow-sm animate-fadeIn">
+          <AlertTriangle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
       {/* ==================================================== */}
       {/* BOOKING TAB CONTENT */}

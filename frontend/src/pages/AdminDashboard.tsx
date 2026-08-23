@@ -12,7 +12,8 @@ import {
   Search,
   Filter,
   Eye,
-  Info
+  Info,
+  CheckCircle
 } from 'lucide-react';
 
 interface Zone {
@@ -98,6 +99,10 @@ export default function AdminDashboard() {
   // Selected entities for details/modals
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
+  // Inline Notification State
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+
   // Forms state
   const [newZoneName, setNewZoneName] = useState('');
   const [newZoneDesc, setNewZoneDesc] = useState('');
@@ -126,6 +131,18 @@ export default function AdminDashboard() {
     fetchAgents();
     fetchOrders();
   }, [filterStatus, filterZone, filterAgent]);
+
+  const showSuccess = (msg: string) => {
+    setSuccessMsg(msg);
+    setErrorMsg('');
+    setTimeout(() => setSuccessMsg(''), 5000);
+  };
+
+  const showError = (msg: string) => {
+    setErrorMsg(msg);
+    setSuccessMsg('');
+    setTimeout(() => setErrorMsg(''), 5000);
+  };
 
   const fetchZones = async () => {
     const res = await fetch('/api/admin/zones', { headers: { Authorization: `Bearer ${token}` } });
@@ -185,10 +202,11 @@ export default function AdminDashboard() {
     if (res.ok) {
       setNewZoneName('');
       setNewZoneDesc('');
+      showSuccess('Zone created successfully!');
       fetchZones();
     } else {
       const d = await res.json();
-      alert(d.error || 'Failed to create zone.');
+      showError(d.error || 'Failed to create zone.');
     }
   };
 
@@ -203,10 +221,11 @@ export default function AdminDashboard() {
     if (res.ok) {
       setNewAreaPostal('');
       setNewAreaName('');
+      showSuccess('Area linked successfully!');
       fetchAreas();
     } else {
       const d = await res.json();
-      alert(d.error || 'Failed to map area.');
+      showError(d.error || 'Failed to map area.');
     }
   };
 
@@ -226,10 +245,11 @@ export default function AdminDashboard() {
       }),
     });
     if (res.ok) {
+      showSuccess('Rate card configuration created!');
       fetchRateCards();
     } else {
       const d = await res.json();
-      alert(d.error || 'Failed to create rate card.');
+      showError(d.error || 'Failed to create rate card.');
     }
   };
 
@@ -237,6 +257,7 @@ export default function AdminDashboard() {
   const handleDeleteZone = async (id: string) => {
     if (confirm('Delete this zone? This deletes all mapped areas and rate cards!')) {
       await fetch(`/api/admin/zones/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      showSuccess('Zone deleted successfully.');
       fetchZones();
       fetchAreas();
       fetchRateCards();
@@ -245,11 +266,13 @@ export default function AdminDashboard() {
 
   const handleDeleteArea = async (id: string) => {
     await fetch(`/api/admin/areas/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    showSuccess('Area link deleted.');
     fetchAreas();
   };
 
   const handleDeleteRateCard = async (id: string) => {
     await fetch(`/api/admin/ratecards/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    showSuccess('Rate card deleted.');
     fetchRateCards();
   };
 
@@ -259,7 +282,7 @@ export default function AdminDashboard() {
     const body: any = {};
     if (auto) body.auto = true;
     else {
-      if (!assignAgentId) return alert('Select an agent.');
+      if (!assignAgentId) return showError('Please select a specific agent to assign.');
       body.agentId = assignAgentId;
     }
 
@@ -269,7 +292,11 @@ export default function AdminDashboard() {
       body: JSON.stringify(body),
     });
     const d = await res.json();
-    alert(d.message || d.error);
+    if (res.ok) {
+      showSuccess(d.message || 'Agent assigned successfully!');
+    } else {
+      showError(d.error || 'Failed to assign agent.');
+    }
     fetchOrderDetails(selectedOrder.id);
     fetchOrders();
   };
@@ -286,11 +313,11 @@ export default function AdminDashboard() {
     });
 
     if (res.ok) {
-      alert('Status overridden and customer notified.');
+      showSuccess('Status overridden and customer notified.');
       fetchOrderDetails(selectedOrder.id);
       fetchOrders();
     } else {
-      alert('Failed to override status.');
+      showError('Failed to override status.');
     }
   };
 
@@ -370,6 +397,20 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* SUCCESS / ERROR INLINE ALERTS */}
+      {successMsg && (
+        <div className="bg-green-50 text-green-800 px-4 py-3 rounded-lg border border-green-200 text-sm font-semibold flex items-center transition shadow-sm animate-fadeIn">
+          <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+          <span>{successMsg}</span>
+        </div>
+      )}
+      {errorMsg && (
+        <div className="bg-red-50 text-red-800 px-4 py-3 rounded-lg border border-red-200 text-sm font-semibold flex items-center transition shadow-sm animate-fadeIn">
+          <AlertTriangle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
       {/* ==================================================== */}
       {/* ORDERS TAB */}
       {/* ==================================================== */}
@@ -381,7 +422,7 @@ export default function AdminDashboard() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-3 gap-3">
               <div className="flex items-center space-x-2">
                 <Truck className="h-5 w-5 text-green-600" />
-                <h2 className="text-lg font-bold text-gray-800">All Shipments ({orders.length})</h2>
+                <h2 className="text-lg font-bold text-gray-800 font-sans">All Shipments ({orders.length})</h2>
               </div>
               
               <div className="flex flex-wrap gap-2">
