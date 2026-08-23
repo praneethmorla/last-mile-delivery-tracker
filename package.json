@@ -9,7 +9,7 @@
   "scripts": {
     "dev:backend": "npm run dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev": "npx concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build:frontend": "npm run build --workspace=frontend",
     "build:backend": "npm run build --workspace=backend",
     "build": "npm run build:frontend && npm run build:backend",
@@ -20,5 +20,8 @@
   "Overwrite": true,
   "TargetFile": "c:\\Users\\prane\\OneDrive\\Desktop\\RAGAI\\EducationAI\\Unthinkable\\package.json",
   "toolAction": "Write root package.json",
-  "toolSummary": "Write root package.json file"
+  "toolSummary": "Write root package.json file",
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
 }
