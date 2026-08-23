@@ -10,7 +10,10 @@ import {
   MapPin,
   RefreshCw,
   Edit2,
-  Info
+  Info,
+  Calendar,
+  Layers,
+  Inbox
 } from 'lucide-react';
 
 interface Order {
@@ -41,7 +44,7 @@ interface AgentProfile {
 }
 
 export default function AgentDashboard() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   // State
   const [profile, setProfile] = useState<AgentProfile | null>(null);
@@ -118,6 +121,7 @@ export default function AgentDashboard() {
       });
       const data = await res.json();
       setProfile(data);
+      showSuccess(`Status toggled successfully. You are now ${data.isAvailable ? 'Available' : 'Unavailable'}.`);
     } catch (e) {
       console.error(e);
     }
@@ -181,44 +185,93 @@ export default function AgentDashboard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded text-xs font-semibold">Pending</span>;
+        return <span className="px-2.5 py-0.5 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded text-[10px] font-bold uppercase tracking-wider">Pending</span>;
       case 'ASSIGNED':
-        return <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs font-semibold">Assigned</span>;
+        return <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[10px] font-bold uppercase tracking-wider">Assigned</span>;
       case 'PICKED_UP':
-        return <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded text-xs font-semibold">Picked Up</span>;
+        return <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded text-[10px] font-bold uppercase tracking-wider">Picked Up</span>;
       case 'IN_TRANSIT':
-        return <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-semibold">In Transit</span>;
+        return <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[10px] font-bold uppercase tracking-wider">In Transit</span>;
       case 'OUT_FOR_DELIVERY':
-        return <span className="px-2 py-0.5 bg-orange-100 text-orange-800 rounded text-xs font-semibold">Out for Delivery</span>;
+        return <span className="px-2.5 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 rounded text-[10px] font-bold uppercase tracking-wider">Out for Delivery</span>;
       case 'DELIVERED':
-        return <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded text-xs font-semibold">Delivered</span>;
+        return <span className="px-2.5 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded text-[10px] font-bold uppercase tracking-wider">Delivered</span>;
       case 'FAILED':
-        return <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded text-xs font-semibold">Failed</span>;
+        return <span className="px-2.5 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded text-[10px] font-bold uppercase tracking-wider">Failed</span>;
       default:
-        return <span className="px-2 py-0.5 bg-gray-100 text-gray-800 rounded text-xs font-semibold">{status}</span>;
+        return <span className="px-2.5 py-0.5 bg-gray-50 text-gray-700 border border-gray-200 rounded text-[10px] font-bold uppercase tracking-wider">{status}</span>;
     }
   };
 
+  const totalAssigned = orders.length;
+  const pendingPickup = orders.filter((o) => o.status === 'ASSIGNED').length;
+  const transitCount = orders.filter((o) => ['PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(o.status)).length;
+  const completedDrops = orders.filter((o) => o.status === 'DELIVERED').length;
+
   return (
     <div className="space-y-6">
-      {/* Page Header */}
+      
+      {/* 1. AGENT STATISTICS METRICS */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Assigned Shipments</span>
+            <h3 className="text-2xl font-black text-gray-900">{totalAssigned}</h3>
+          </div>
+          <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded-lg">
+            <Layers className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Awaiting Pickup</span>
+            <h3 className="text-2xl font-black text-gray-900">{pendingPickup}</h3>
+          </div>
+          <div className="bg-blue-50 text-blue-600 p-2.5 rounded-lg">
+            <Inbox className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">In-Transit Pipeline</span>
+            <h3 className="text-2xl font-black text-gray-900">{transitCount}</h3>
+          </div>
+          <div className="bg-yellow-50 text-yellow-600 p-2.5 rounded-lg">
+            <Truck className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Completed Drops</span>
+            <h3 className="text-2xl font-black text-gray-900">{completedDrops}</h3>
+          </div>
+          <div className="bg-green-50 text-green-600 p-2.5 rounded-lg">
+            <CheckCircle className="h-5 w-5" />
+          </div>
+        </div>
+      </div>
+
+      {/* Page Header Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-xl border border-gray-200 shadow-sm gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900">Agent Delivery Console</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Manage tasks, report location, and toggle availability.</p>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Agent Dispatch Queue</h1>
+          <p className="text-gray-500 text-sm mt-0.5">Toggle availability status, verify GPS pins, and log route status.</p>
         </div>
         {profile && (
           <div className="flex items-center space-x-3">
             <button
               onClick={handleToggleAvailability}
-              className={`flex items-center px-4 py-2 rounded-lg font-bold text-sm shadow transition ${
+              className={`flex items-center px-4 py-2 rounded-lg font-bold text-xs shadow transition uppercase tracking-wider ${
                 profile.isAvailable
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                  ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-100'
                   : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
               }`}
             >
-              <UserCheck className="h-4 w-4 mr-2" />
-              Status: {profile.isAvailable ? 'Available' : 'Unavailable'}
+              <UserCheck className="h-4.5 w-4.5 mr-2" />
+              Duty: {profile.isAvailable ? 'ON DUTY (AVAIL)' : 'OFF DUTY (BUSY)'}
             </button>
             <button
               onClick={() => {
@@ -253,22 +306,22 @@ export default function AgentDashboard() {
         {/* LEFT COLUMN: Agent Location Profile */}
         <div className="lg:col-span-1 bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-5">
           <div className="flex items-center space-x-2 border-b border-gray-100 pb-3">
-            <MapPin className="h-5 w-5 text-green-600" />
-            <h2 className="text-lg font-bold text-gray-800">Your Operational Profile</h2>
+            <MapPin className="h-5 w-5 text-indigo-600" />
+            <h2 className="text-lg font-bold text-gray-800 font-sans">Operational Profile</h2>
           </div>
 
           {profile && (
             <div className="space-y-4">
               <div className="text-sm space-y-2">
-                <p>
-                  <strong>Zone Area:</strong>{' '}
-                  <span className="text-gray-600">{profile.currentZone?.name || 'Unconfigured Zone'}</span>
+                <p className="flex justify-between border-b pb-1">
+                  <strong className="text-gray-500">Linked Region:</strong>{' '}
+                  <span className="font-bold text-gray-800">{profile.currentZone?.name || 'Unconfigured Zone'}</span>
                 </p>
-                <p>
-                  <strong>GPS Lat:</strong> <span className="text-gray-600 font-mono">{profile.currentLat || 'N/A'}</span>
+                <p className="flex justify-between border-b pb-1">
+                  <strong className="text-gray-500">Live Latitude:</strong> <span className="font-mono text-gray-700">{profile.currentLat || 'N/A'}</span>
                 </p>
-                <p>
-                  <strong>GPS Lng:</strong> <span className="text-gray-600 font-mono">{profile.currentLng || 'N/A'}</span>
+                <p className="flex justify-between border-b pb-1">
+                  <strong className="text-gray-500">Live Longitude:</strong> <span className="font-mono text-gray-700">{profile.currentLng || 'N/A'}</span>
                 </p>
               </div>
 
@@ -283,7 +336,7 @@ export default function AgentDashboard() {
                         required
                         value={newLat}
                         onChange={(e) => setNewLat(e.target.value)}
-                        className="w-full px-2 py-1 border rounded text-xs"
+                        className="w-full px-2 py-1 border rounded text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600"
                       />
                     </div>
                     <div>
@@ -294,21 +347,21 @@ export default function AgentDashboard() {
                         required
                         value={newLng}
                         onChange={(e) => setNewLng(e.target.value)}
-                        className="w-full px-2 py-1 border rounded text-xs"
+                        className="w-full px-2 py-1 border rounded text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600"
                       />
                     </div>
                   </div>
                   <div className="flex space-x-2 text-xs">
                     <button
                       type="submit"
-                      className="bg-green-600 text-white font-bold px-2 py-1 rounded"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded"
                     >
-                      Save
+                      Save Coordinates
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingLoc(false)}
-                      className="bg-gray-200 text-gray-700 px-2 py-1 rounded"
+                      className="bg-gray-200 text-gray-700 px-2.5 py-1 rounded"
                     >
                       Cancel
                     </button>
@@ -317,17 +370,17 @@ export default function AgentDashboard() {
               ) : (
                 <button
                   onClick={() => setEditingLoc(true)}
-                  className="w-full border border-gray-300 hover:bg-gray-50 text-gray-700 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center space-x-1.5 transition"
+                  className="w-full border border-gray-300 hover:bg-gray-50 text-gray-700 py-1.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center space-x-1.5 transition"
                 >
                   <Edit2 className="h-3.5 w-3.5" />
                   <span>Update Location (Coordinates)</span>
                 </button>
               )}
 
-              <div className="p-3 bg-blue-50 text-blue-700 rounded-lg text-xs flex items-start space-x-2">
-                <Info className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
+              <div className="p-3 bg-indigo-50 text-indigo-700 rounded-lg text-xs flex items-start space-x-2">
+                <Info className="h-4 w-4 text-indigo-500 flex-shrink-0 mt-0.5" />
                 <span>
-                  The auto-assignment engine uses your GPS coordinates and zone assignment to pair you with the closest pickups. Keep your location updated to get nearby bookings.
+                  Proximity routing automatically assigns you to bookings based on your coordinates. Keep your GPS pins updated to receive nearby dispatches.
                 </span>
               </div>
             </div>
@@ -340,18 +393,18 @@ export default function AgentDashboard() {
           {/* Orders Table */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <div className="flex items-center space-x-2 mb-4 border-b border-gray-100 pb-3">
-              <Truck className="h-5 w-5 text-green-600" />
-              <h2 className="text-lg font-bold text-gray-800 font-sans">Your Assigned Deliveries ({orders.length})</h2>
+              <Truck className="h-5 w-5 text-indigo-600" />
+              <h2 className="text-lg font-bold text-gray-800 font-sans">Active Delivery Queue ({orders.length})</h2>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="min-w-full text-sm text-left text-gray-600">
-                <thead className="bg-gray-50 text-gray-700 text-xs uppercase font-semibold">
+              <table className="min-w-full text-xs text-left text-gray-600">
+                <thead className="bg-gray-50 text-gray-700 uppercase font-semibold">
                   <tr>
                     <th className="py-2.5 px-3">Order ID</th>
-                    <th className="py-2.5 px-3">Customer</th>
-                    <th className="py-2.5 px-3">Pickup Address</th>
-                    <th className="py-2.5 px-3">Drop Address</th>
+                    <th className="py-2.5 px-3">Recipient</th>
+                    <th className="py-2.5 px-3">Pickup point</th>
+                    <th className="py-2.5 px-3">Destination</th>
                     <th className="py-2.5 px-3">Status</th>
                     <th className="py-2.5 px-3 text-right">Action</th>
                   </tr>
@@ -359,17 +412,21 @@ export default function AgentDashboard() {
                 <tbody className="divide-y divide-gray-100">
                   {orders.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-6 text-gray-400">
-                        You have no deliveries currently assigned. Set your status to "Available" and wait for assignment.
+                      <td colSpan={6} className="text-center py-10 text-gray-400">
+                        <svg className="w-12 h-12 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                        <p className="font-semibold text-gray-500 text-sm">No shipments assigned</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">Toggle duty to "Available" to get automatically assigned.</p>
                       </td>
                     </tr>
                   ) : (
                     orders.map((o) => (
-                      <tr key={o.id} className="hover:bg-gray-50/50">
-                        <td className="py-3 px-3 font-mono text-xs font-semibold text-gray-900">
+                      <tr key={o.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="py-3 px-3 font-mono font-bold text-gray-900">
                           {o.id.split('-')[0]}
                         </td>
-                        <td className="py-3 px-3 text-xs">{o.customer.name}</td>
+                        <td className="py-3 px-3 text-xs font-semibold">{o.customer.name}</td>
                         <td className="py-3 px-3 text-xs">
                           {o.pickupAddress} <br />
                           <span className="text-gray-400">({o.pickupArea.name})</span>
@@ -385,7 +442,7 @@ export default function AgentDashboard() {
                               setSelectedOrder(o);
                               setNewStatus(o.status);
                             }}
-                            className="bg-green-50 text-green-700 hover:bg-green-100 font-bold py-1 px-2.5 rounded flex inline-flex items-center space-x-1 text-xs transition"
+                            className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold py-1 px-2.5 rounded flex inline-flex items-center space-x-1 text-[10px] uppercase tracking-wider transition"
                           >
                             <span>Open</span>
                             <ChevronRight className="h-3.5 w-3.5" />
@@ -402,8 +459,8 @@ export default function AgentDashboard() {
           {/* Detailed Status Updater Panel */}
           {selectedOrder && (
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4 animate-fadeIn">
-              <h3 className="text-lg font-bold text-gray-800 border-b border-gray-100 pb-2 flex justify-between items-center">
-                <span>Update Order #{selectedOrder.id.split('-')[0]}</span>
+              <h3 className="text-base font-bold text-gray-800 border-b border-gray-100 pb-2 flex justify-between items-center">
+                <span>Update Journey stage for Order #{selectedOrder.id.split('-')[0]}</span>
                 <button
                   onClick={() => setSelectedOrder(null)}
                   className="text-xs text-gray-400 hover:text-gray-600 font-bold"
@@ -412,16 +469,16 @@ export default function AgentDashboard() {
                 </button>
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-700">
                 <div>
-                  <p><strong>Customer:</strong> {selectedOrder.customer.name} ({selectedOrder.customer.email})</p>
-                  <p><strong>Pickup From:</strong> {selectedOrder.pickupAddress} ({selectedOrder.pickupArea.name})</p>
-                  <p><strong>Deliver To:</strong> {selectedOrder.dropAddress} ({selectedOrder.dropArea.name})</p>
+                  <p><strong>Recipient Company:</strong> {selectedOrder.customer.name} ({selectedOrder.customer.email})</p>
+                  <p><strong>Pickup address:</strong> {selectedOrder.pickupAddress} ({selectedOrder.pickupArea.name})</p>
+                  <p><strong>Drop address:</strong> {selectedOrder.dropAddress} ({selectedOrder.dropArea.name})</p>
                 </div>
                 <div>
-                  <p><strong>Payment Type:</strong> {selectedOrder.paymentType}</p>
-                  <p><strong>Charge Amount:</strong> ₹{selectedOrder.totalCharge.toFixed(2)}</p>
-                  <p><strong>Current Status:</strong> {getStatusBadge(selectedOrder.status)}</p>
+                  <p><strong>Payment terms:</strong> {selectedOrder.paymentType}</p>
+                  <p><strong>Total charge:</strong> ₹{selectedOrder.totalCharge.toFixed(2)}</p>
+                  <p><strong>Active stage:</strong> {getStatusBadge(selectedOrder.status)}</p>
                 </div>
               </div>
 
@@ -429,33 +486,33 @@ export default function AgentDashboard() {
               <form onSubmit={handleStatusUpdate} className="bg-gray-50 border p-4 rounded-xl space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Select New Journey Stage</label>
+                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">Select New Journey Stage</label>
                     <select
                       value={newStatus}
                       onChange={(e) => setNewStatus(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-indigo-600"
                     >
                       <option value="ASSIGNED">Assigned (Initial)</option>
                       <option value="PICKED_UP">Picked Up</option>
                       <option value="IN_TRANSIT">In Transit</option>
                       <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-                      <option value="DELIVERED">Delivered</option>
+                      <option value="DELIVERED">Delivered (Success)</option>
                       <option value="FAILED">Failed Attempt</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase">Status logs / Fail Reason</label>
+                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">Timeline log note / Fail Reason</label>
                     <input
                       type="text"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder={
                         newStatus === 'FAILED'
-                          ? 'E.g., Customer not at home / unreachable.'
-                          : 'E.g., Handed over to security.'
+                          ? 'Specify reason, e.g. Receiver unreachable.'
+                          : 'Enter timeline description notes...'
                       }
                       required={newStatus === 'FAILED'}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600"
                     />
                   </div>
                 </div>
@@ -472,7 +529,7 @@ export default function AgentDashboard() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg text-sm shadow transition"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs shadow-md transition"
                 >
                   {loading ? 'Submitting Status Update...' : 'Commit Status Change'}
                 </button>

@@ -13,7 +13,10 @@ import {
   Eye,
   Info,
   History,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Coins,
+  TrendingUp,
+  Boxes
 } from 'lucide-react';
 
 interface Area {
@@ -270,31 +273,72 @@ export default function CustomerDashboard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">Pending</span>;
+        return <span className="px-2.5 py-0.5 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Pending</span>;
       case 'ASSIGNED':
-        return <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">Assigned</span>;
+        return <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Assigned</span>;
       case 'PICKED_UP':
-        return <span className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-semibold">Picked Up</span>;
+        return <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Picked Up</span>;
       case 'IN_TRANSIT':
-        return <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold">In Transit</span>;
+        return <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-full text-[10px] font-bold uppercase tracking-wider">In Transit</span>;
       case 'OUT_FOR_DELIVERY':
-        return <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-semibold">Out for Delivery</span>;
+        return <span className="px-2.5 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Out for Delivery</span>;
       case 'DELIVERED':
-        return <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Delivered</span>;
+        return <span className="px-2.5 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Delivered</span>;
       case 'FAILED':
-        return <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">Failed</span>;
+        return <span className="px-2.5 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Failed</span>;
       default:
-        return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">{status}</span>;
+        return <span className="px-2.5 py-0.5 bg-gray-50 text-gray-700 border border-gray-200 rounded-full text-[10px] font-bold uppercase tracking-wider">{status}</span>;
     }
   };
 
+  // Metrics calculations for KPIs
+  const totalCost = orders.reduce((sum, o) => sum + o.totalCharge, 0);
+  const activeCount = orders.filter((o) => ['PENDING', 'ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(o.status)).length;
+  const completedCount = orders.filter((o) => o.status === 'DELIVERED').length;
+
   return (
     <div className="space-y-6">
+      
+      {/* 1. KEY PERFORMANCE METRICS GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Booking Investment</span>
+            <h3 className="text-2xl font-black text-gray-900">₹{totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+          </div>
+          <div className="bg-indigo-50 text-indigo-600 p-3 rounded-xl">
+            <Coins className="h-6 w-6" />
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Shipments In-Transit</span>
+            <h3 className="text-2xl font-black text-gray-900">{activeCount}</h3>
+          </div>
+          <div className="bg-yellow-50 text-yellow-600 p-3 rounded-xl">
+            <Truck className="h-6 w-6 animate-pulse" />
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Completed Deliveries</span>
+            <h3 className="text-2xl font-black text-gray-900">{completedCount}</h3>
+          </div>
+          <div className="bg-green-50 text-green-600 p-3 rounded-xl">
+            <Boxes className="h-6 w-6" />
+          </div>
+        </div>
+
+      </div>
+
       {/* Page Heading & Tabs */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-xl border border-gray-200 shadow-sm gap-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Customer Dashboard</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Place delivery orders and trace active shipments.</p>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Customer Dispatch Operations</h1>
+          <p className="text-gray-500 text-sm mt-0.5">Configure shipment properties and trace parcel routes.</p>
         </div>
 
         {/* Tab Controls */}
@@ -302,7 +346,7 @@ export default function CustomerDashboard() {
           <button
             onClick={() => setActiveSubTab('booking')}
             className={`px-5 py-2 rounded-md transition flex items-center space-x-1.5 ${
-              activeSubTab === 'booking' ? 'bg-white text-green-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              activeSubTab === 'booking' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             <Calculator className="h-4 w-4" />
@@ -311,7 +355,7 @@ export default function CustomerDashboard() {
           <button
             onClick={() => setActiveSubTab('history')}
             className={`px-5 py-2 rounded-md transition flex items-center space-x-1.5 ${
-              activeSubTab === 'history' ? 'bg-white text-green-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              activeSubTab === 'history' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             <History className="h-4 w-4" />
@@ -340,7 +384,7 @@ export default function CustomerDashboard() {
       {activeSubTab === 'booking' && (
         <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-200">
           <div className="flex items-center space-x-2.5 mb-6 border-b border-gray-100 pb-3">
-            <Package className="h-6 w-6 text-green-600" />
+            <Package className="h-6 w-6 text-indigo-600" />
             <h2 className="text-xl font-bold text-gray-800">New Shipment Booking</h2>
           </div>
 
@@ -357,7 +401,7 @@ export default function CustomerDashboard() {
                     value={pickupAddress}
                     onChange={(e) => setPickupAddress(e.target.value)}
                     placeholder="E.g., 123 Alpha Road, Apartment 4B"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:border-transparent transition"
                   />
                 </div>
                 <div>
@@ -387,7 +431,7 @@ export default function CustomerDashboard() {
                     value={dropAddress}
                     onChange={(e) => setDropAddress(e.target.value)}
                     placeholder="E.g., 456 Omega Street, Office 12"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:border-transparent transition"
                   />
                 </div>
                 <div>
@@ -488,14 +532,14 @@ export default function CustomerDashboard() {
             </div>
 
             {/* LIVE RATE PREVIEW PANEL */}
-            <div className="bg-green-50 border border-green-200 p-5 rounded-xl space-y-3">
-              <div className="flex items-center space-x-1.5 text-green-800 font-bold text-sm">
-                <Calculator className="h-5 w-5 text-green-600" />
+            <div className="bg-indigo-50/50 border border-indigo-200 p-5 rounded-xl space-y-3">
+              <div className="flex items-center space-x-1.5 text-indigo-900 font-bold text-sm">
+                <Calculator className="h-5 w-5 text-indigo-600" />
                 <span>Live Calculated Charge Breakdown</span>
               </div>
               {previewError && <p className="text-red-600 text-xs font-semibold">{previewError}</p>}
               {pricingPreview ? (
-                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs text-gray-700 border-t border-green-200/60 pt-2.5">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs text-gray-700 border-t border-indigo-200/60 pt-2.5">
                   <div className="flex justify-between">
                     <span>Volumetric Weight:</span>
                     <strong className="text-gray-900">{pricingPreview.volumetricWeight.toFixed(2)} kg</strong>
@@ -512,7 +556,7 @@ export default function CustomerDashboard() {
                     <span>COD Fee:</span>
                     <strong className="text-gray-900">₹{pricingPreview.codSurcharge.toFixed(2)}</strong>
                   </div>
-                  <div className="flex justify-between col-span-2 text-sm font-bold text-green-900 border-t border-green-200 pt-2">
+                  <div className="flex justify-between col-span-2 text-sm font-bold text-indigo-900 border-t border-indigo-200 pt-2">
                     <span>Total Billable Cost:</span>
                     <span>₹{pricingPreview.totalCharge.toFixed(2)}</span>
                   </div>
@@ -525,7 +569,7 @@ export default function CustomerDashboard() {
             <button
               type="submit"
               disabled={bookingLoading || !pricingPreview}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-md disabled:opacity-50 transition"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-indigo-100 disabled:opacity-50 transition"
             >
               {bookingLoading ? 'Processing Booking...' : 'Confirm Shipment Booking'}
             </button>
@@ -543,12 +587,12 @@ export default function CustomerDashboard() {
           <div className={`${selectedOrder ? 'lg:col-span-2' : 'lg:col-span-3'} bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4`}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
               <div className="flex items-center space-x-2">
-                <FileSpreadsheet className="h-5 w-5 text-green-600" />
+                <FileSpreadsheet className="h-5 w-5 text-indigo-600" />
                 <h2 className="text-lg font-bold text-gray-800 font-sans">Booking History Log</h2>
               </div>
               <button
                 onClick={fetchOrders}
-                className="text-xs text-green-600 font-bold hover:underline"
+                className="text-xs text-indigo-600 font-bold hover:underline"
               >
                 Refresh Log
               </button>
@@ -569,13 +613,18 @@ export default function CustomerDashboard() {
                 <tbody className="divide-y divide-gray-100">
                   {orders.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-6 text-gray-400">
-                        You haven't placed any orders yet. Go to the "Book Delivery" tab.
+                      <td colSpan={6} className="text-center py-10 text-gray-400">
+                        {/* SVG Empty State illustration */}
+                        <svg className="w-12 h-12 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        <p className="font-semibold text-gray-500 text-sm">No shipments booked yet</p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">Book your first parcel route using the "Book Delivery" tab above.</p>
                       </td>
                     </tr>
                   ) : (
                     orders.map((o) => (
-                      <tr key={o.id} className="hover:bg-gray-50/50">
+                      <tr key={o.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="py-3 px-3 font-mono font-bold text-gray-900">
                           {o.id.split('-')[0]}
                         </td>
@@ -592,7 +641,7 @@ export default function CustomerDashboard() {
                         <td className="py-3 px-3 text-right">
                           <button
                             onClick={() => fetchOrderDetails(o.id)}
-                            className="bg-gray-100 text-gray-700 hover:bg-green-50 hover:text-green-700 px-2 py-1 rounded font-bold text-[10px] inline-flex items-center space-x-1.5 transition"
+                            className="bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 px-2 py-1 rounded font-bold text-[10px] inline-flex items-center space-x-1.5 transition"
                           >
                             <Eye className="h-3.5 w-3.5" />
                             <span>Track Package</span>
@@ -683,16 +732,16 @@ export default function CustomerDashboard() {
               {/* Timeline Audits */}
               <div className="border-t pt-4">
                 <h4 className="text-xs font-bold text-gray-700 uppercase mb-2 flex items-center space-x-1.5">
-                  <Compass className="h-4 w-4 text-green-600" />
+                  <Compass className="h-4 w-4 text-indigo-600" />
                   <span>Delivery Journey Stages</span>
                 </h4>
                 <div className="relative border-l pl-3 ml-1.5 space-y-4 text-xs">
                   {timeline.length === 0 ? (
-                    <p className="text-gray-400">Loading timeline stages...</p>
+                    <p className="text-gray-400 text-[10px]">Loading timeline stages...</p>
                   ) : (
                     timeline.map((item) => (
                       <div key={item.id} className="relative">
-                        <div className="absolute -left-[18px] top-1 bg-white border border-green-600 rounded-full h-2 w-2"></div>
+                        <div className="absolute -left-[18px] top-1 bg-white border border-indigo-600 rounded-full h-2 w-2"></div>
                         <div className="flex justify-between font-bold text-gray-900 text-[10px]">
                           <span>{item.status}</span>
                           <span className="text-gray-400 font-normal">{new Date(item.timestamp).toLocaleTimeString()}</span>

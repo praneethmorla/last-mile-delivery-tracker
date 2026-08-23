@@ -13,7 +13,12 @@ import {
   Filter,
   Eye,
   Info,
-  CheckCircle
+  CheckCircle,
+  TrendingUp,
+  Map,
+  Users,
+  Coins,
+  Inbox
 } from 'lucide-react';
 
 interface Zone {
@@ -333,26 +338,75 @@ export default function AdminDashboard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return <span className="px-2.5 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">Pending</span>;
+        return <span className="px-2.5 py-0.5 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Pending</span>;
       case 'ASSIGNED':
-        return <span className="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">Assigned</span>;
+        return <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Assigned</span>;
       case 'PICKED_UP':
-        return <span className="px-2.5 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-semibold">Picked Up</span>;
+        return <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Picked Up</span>;
       case 'IN_TRANSIT':
-        return <span className="px-2.5 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-semibold">In Transit</span>;
+        return <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-full text-[10px] font-bold uppercase tracking-wider">In Transit</span>;
       case 'OUT_FOR_DELIVERY':
-        return <span className="px-2.5 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-semibold">Out for Delivery</span>;
+        return <span className="px-2.5 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Out for Delivery</span>;
       case 'DELIVERED':
-        return <span className="px-2.5 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Delivered</span>;
+        return <span className="px-2.5 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Delivered</span>;
       case 'FAILED':
-        return <span className="px-2.5 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">Failed</span>;
+        return <span className="px-2.5 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Failed</span>;
       default:
-        return <span className="px-2.5 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">{status}</span>;
+        return <span className="px-2.5 py-0.5 bg-gray-50 text-gray-700 border border-gray-200 rounded-full text-[10px] font-bold uppercase tracking-wider">{status}</span>;
     }
   };
 
+  const totalInvoice = orders.reduce((sum, o) => sum + o.totalCharge, 0);
+  const activeAgents = agents.filter((a) => a.isAvailable).length;
+
   return (
     <div className="space-y-6">
+      
+      {/* 1. ADMIN KPI METRICS DASHBOARD */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Invoice Volume</span>
+            <h3 className="text-2xl font-black text-gray-900">₹{totalInvoice.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</h3>
+          </div>
+          <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded-lg">
+            <Coins className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Shipments</span>
+            <h3 className="text-2xl font-black text-gray-900">{orders.length}</h3>
+          </div>
+          <div className="bg-blue-50 text-blue-600 p-2.5 rounded-lg">
+            <Inbox className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">On-Duty Couriers</span>
+            <h3 className="text-2xl font-black text-gray-900">{activeAgents} / {agents.length}</h3>
+          </div>
+          <div className="bg-green-50 text-green-600 p-2.5 rounded-lg">
+            <Users className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Operating Zones</span>
+            <h3 className="text-2xl font-black text-gray-900">{zones.length}</h3>
+          </div>
+          <div className="bg-yellow-50 text-yellow-600 p-2.5 rounded-lg">
+            <Map className="h-5 w-5" />
+          </div>
+        </div>
+
+      </div>
+
       {/* Dashboard Top bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-xl border border-gray-200 shadow-sm gap-4">
         <div>
@@ -365,7 +419,7 @@ export default function AdminDashboard() {
           <button
             onClick={() => setActiveTab('orders')}
             className={`px-4 py-1.5 rounded-md transition ${
-              activeTab === 'orders' ? 'bg-white text-green-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              activeTab === 'orders' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             Orders
@@ -373,7 +427,7 @@ export default function AdminDashboard() {
           <button
             onClick={() => setActiveTab('zones')}
             className={`px-4 py-1.5 rounded-md transition ${
-              activeTab === 'zones' ? 'bg-white text-green-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              activeTab === 'zones' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             Zones & Areas
@@ -381,7 +435,7 @@ export default function AdminDashboard() {
           <button
             onClick={() => setActiveTab('rates')}
             className={`px-4 py-1.5 rounded-md transition ${
-              activeTab === 'rates' ? 'bg-white text-green-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              activeTab === 'rates' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             Rate Cards
@@ -389,7 +443,7 @@ export default function AdminDashboard() {
           <button
             onClick={() => setActiveTab('agents')}
             className={`px-4 py-1.5 rounded-md transition ${
-              activeTab === 'agents' ? 'bg-white text-green-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              activeTab === 'agents' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             Agents
@@ -421,7 +475,7 @@ export default function AdminDashboard() {
           <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-3 gap-3">
               <div className="flex items-center space-x-2">
-                <Truck className="h-5 w-5 text-green-600" />
+                <Truck className="h-5 w-5 text-indigo-600" />
                 <h2 className="text-lg font-bold text-gray-800 font-sans">All Shipments ({orders.length})</h2>
               </div>
               
@@ -504,7 +558,7 @@ export default function AdminDashboard() {
                         <td className="py-3 px-3 text-right">
                           <button
                             onClick={() => fetchOrderDetails(o.id)}
-                            className="bg-gray-100 text-gray-700 hover:bg-green-50 hover:text-green-700 px-2 py-1 rounded font-bold text-[10px] transition"
+                            className="bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 px-2 py-1 rounded font-bold text-[10px] transition"
                           >
                             Manage
                           </button>
@@ -546,7 +600,7 @@ export default function AdminDashboard() {
                     <select
                       value={assignAgentId}
                       onChange={(e) => setAssignAgentId(e.target.value)}
-                      className="flex-grow px-2 py-1 text-xs border rounded bg-white"
+                      className="flex-grow px-2 py-1 text-xs border rounded bg-white focus:outline-none"
                     >
                       <option value="">-- Choose Agent --</option>
                       {agents.map((ag) => (
@@ -557,7 +611,7 @@ export default function AdminDashboard() {
                     </select>
                     <button
                       onClick={() => handleAssignAgent(false)}
-                      className="bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-3 py-1 rounded"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1 rounded"
                     >
                       Assign
                     </button>
@@ -566,7 +620,7 @@ export default function AdminDashboard() {
                   <div className="border-t pt-2.5">
                     <button
                       onClick={() => handleAssignAgent(true)}
-                      className="w-full border border-green-600 hover:bg-green-50 text-green-700 text-xs font-bold py-1.5 rounded transition flex items-center justify-center space-x-1"
+                      className="w-full border border-indigo-600 hover:bg-indigo-50 text-indigo-700 text-xs font-bold py-1.5 rounded transition flex items-center justify-center space-x-1"
                     >
                       <Compass className="h-3.5 w-3.5" />
                       <span>Trigger Auto-Assignment</span>
@@ -581,7 +635,7 @@ export default function AdminDashboard() {
                     <select
                       value={overrideStatus}
                       onChange={(e) => setOverrideStatus(e.target.value)}
-                      className="w-full px-2 py-1 text-xs border rounded bg-white"
+                      className="w-full px-2 py-1 text-xs border rounded bg-white focus:outline-none"
                     >
                       <option value="PENDING">Pending</option>
                       <option value="ASSIGNED">Assigned</option>
@@ -596,7 +650,7 @@ export default function AdminDashboard() {
                       placeholder="Notes for status override log..."
                       value={overrideNotes}
                       onChange={(e) => setOverrideNotes(e.target.value)}
-                      className="w-full px-2 py-1 text-xs border rounded"
+                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-indigo-600"
                     />
                     <button
                       type="submit"
@@ -677,7 +731,7 @@ export default function AdminDashboard() {
                   placeholder="E.g., Zone West"
                   value={newZoneName}
                   onChange={(e) => setNewZoneName(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border rounded"
+                  className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-indigo-600"
                 />
               </div>
               <div>
@@ -687,12 +741,12 @@ export default function AdminDashboard() {
                   placeholder="Zone details..."
                   value={newZoneDesc}
                   onChange={(e) => setNewZoneDesc(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border rounded"
+                  className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-indigo-600"
                 />
               </div>
               <button
                 type="submit"
-                className="w-full sm:col-span-2 bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 rounded text-xs transition"
+                className="w-full sm:col-span-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 rounded text-xs transition shadow-sm"
               >
                 Add Operational Zone
               </button>
@@ -704,8 +758,8 @@ export default function AdminDashboard() {
                   <div>
                     <h4 className="font-bold text-gray-800">{z.name}</h4>
                     <p className="text-gray-500 text-xs">{z.description || 'No description'}</p>
-                    <p className="text-[10px] text-gray-400 font-medium">
-                      Areas: {z._count?.areas} | Active Agents: {z._count?.agentProfiles}
+                    <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                      Areas Linked: {z._count?.areas} | active couriers: {z._count?.agentProfiles}
                     </p>
                   </div>
                   <button
@@ -735,7 +789,7 @@ export default function AdminDashboard() {
                     placeholder="E.g., 400050"
                     value={newAreaPostal}
                     onChange={(e) => setNewAreaPostal(e.target.value)}
-                    className="w-full px-2 py-1.5 text-xs border rounded"
+                    className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-indigo-600"
                   />
                 </div>
                 <div>
@@ -746,7 +800,7 @@ export default function AdminDashboard() {
                     placeholder="E.g., Bandra"
                     value={newAreaName}
                     onChange={(e) => setNewAreaName(e.target.value)}
-                    className="w-full px-2 py-1.5 text-xs border rounded"
+                    className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-indigo-600"
                   />
                 </div>
                 <div>
@@ -754,7 +808,7 @@ export default function AdminDashboard() {
                   <select
                     value={newAreaZoneId}
                     onChange={(e) => setNewAreaZoneId(e.target.value)}
-                    className="w-full px-2 py-1.5 text-xs border bg-white"
+                    className="w-full px-2 py-1.5 text-xs border bg-white focus:outline-none"
                   >
                     {zones.map((z) => (
                       <option key={z.id} value={z.id}>{z.name}</option>
@@ -764,7 +818,7 @@ export default function AdminDashboard() {
               </div>
               <button
                 type="submit"
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 rounded text-xs transition"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 rounded text-xs transition shadow-sm"
               >
                 Map Area to Zone
               </button>
@@ -820,7 +874,7 @@ export default function AdminDashboard() {
                 <select
                   value={newRcFromZone}
                   onChange={(e) => setNewRcFromZone(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border bg-white"
+                  className="w-full px-2 py-1.5 text-xs border bg-white focus:outline-none"
                 >
                   {zones.map((z) => (
                     <option key={z.id} value={z.id}>{z.name}</option>
@@ -833,7 +887,7 @@ export default function AdminDashboard() {
                 <select
                   value={newRcToZone}
                   onChange={(e) => setNewRcToZone(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border bg-white"
+                  className="w-full px-2 py-1.5 text-xs border bg-white focus:outline-none"
                 >
                   {zones.map((z) => (
                     <option key={z.id} value={z.id}>{z.name}</option>
@@ -846,7 +900,7 @@ export default function AdminDashboard() {
                 <select
                   value={newRcType}
                   onChange={(e) => setNewRcType(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border bg-white"
+                  className="w-full px-2 py-1.5 text-xs border bg-white focus:outline-none"
                 >
                   <option value="B2C">B2C (Retail)</option>
                   <option value="B2B">B2B (Enterprise)</option>
@@ -860,7 +914,7 @@ export default function AdminDashboard() {
                   required
                   value={newRcBase}
                   onChange={(e) => setNewRcBase(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border"
+                  className="w-full px-2 py-1.5 text-xs border focus:outline-none focus:ring-1 focus:ring-indigo-600"
                 />
               </div>
 
@@ -871,7 +925,7 @@ export default function AdminDashboard() {
                   required
                   value={newRcPerKg}
                   onChange={(e) => setNewRcPerKg(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border"
+                  className="w-full px-2 py-1.5 text-xs border focus:outline-none focus:ring-1 focus:ring-indigo-600"
                 />
               </div>
 
@@ -882,13 +936,13 @@ export default function AdminDashboard() {
                   required
                   value={newRcCod}
                   onChange={(e) => setNewRcCod(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border"
+                  className="w-full px-2 py-1.5 text-xs border focus:outline-none focus:ring-1 focus:ring-indigo-600"
                 />
               </div>
             </div>
             <button
               type="submit"
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-1.5 rounded text-xs transition"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 rounded text-xs transition shadow-sm"
             >
               Add Pricing Route Rule
             </button>
@@ -976,9 +1030,9 @@ export default function AdminDashboard() {
                     </td>
                     <td className="py-3 px-3 text-center">
                       {ag.isAvailable ? (
-                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full font-bold text-[10px]">Available</span>
+                        <span className="px-2.5 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded-full font-bold text-[10px] uppercase">Available</span>
                       ) : (
-                        <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full font-bold text-[10px]">Busy / Unavailable</span>
+                        <span className="px-2.5 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded-full font-bold text-[10px] uppercase">Busy</span>
                       )}
                     </td>
                   </tr>

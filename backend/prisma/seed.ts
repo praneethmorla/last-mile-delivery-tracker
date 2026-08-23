@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding database...');
+  console.log('Seeding database with production-grade dummy data...');
 
   // 1. Clean up existing tables
   await prisma.notificationLog.deleteMany({});
@@ -21,9 +21,9 @@ async function main() {
   // 2. Create Users
   const admin = await prisma.user.create({
     data: {
-      email: 'admin@lastmile.com',
+      email: 'admin@dashmile.com',
       passwordHash,
-      name: 'System Administrator',
+      name: 'Eleanor Vance',
       role: 'ADMIN',
     },
   });
@@ -32,34 +32,34 @@ async function main() {
     data: {
       email: 'customer@example.com',
       passwordHash,
-      name: 'John Doe Enterprise',
+      name: 'Acme Retail Group',
       role: 'CUSTOMER',
     },
   });
 
   const agent1 = await prisma.user.create({
     data: {
-      email: 'agent1@lastmile.com',
+      email: 'agent1@dashmile.com',
       passwordHash,
-      name: 'Agent North (David)',
+      name: 'David Vance',
       role: 'AGENT',
     },
   });
 
   const agent2 = await prisma.user.create({
     data: {
-      email: 'agent2@lastmile.com',
+      email: 'agent2@dashmile.com',
       passwordHash,
-      name: 'Agent South (Sarah)',
+      name: 'Sarah Jenkins',
       role: 'AGENT',
     },
   });
 
   const agent3 = await prisma.user.create({
     data: {
-      email: 'agent3@lastmile.com',
+      email: 'agent3@dashmile.com',
       passwordHash,
-      name: 'Agent West (Marcus)',
+      name: 'Marcus Brody',
       role: 'AGENT',
     },
   });
@@ -68,15 +68,15 @@ async function main() {
 
   // 3. Create Zones
   const zoneNorth = await prisma.zone.create({
-    data: { name: 'Zone North', description: 'Northern sector operations' },
+    data: { name: 'Zone North', description: 'North Delhi Sector Operations' },
   });
 
   const zoneSouth = await prisma.zone.create({
-    data: { name: 'Zone South', description: 'Southern sector operations' },
+    data: { name: 'Zone South', description: 'Bangalore South Operational Grid' },
   });
 
   const zoneWest = await prisma.zone.create({
-    data: { name: 'Zone West', description: 'Western sector operations' },
+    data: { name: 'Zone West', description: 'Mumbai West Suburban Hub' },
   });
 
   console.log('Zones created.');
@@ -85,10 +85,10 @@ async function main() {
   const areas = [
     { postalCode: '110001', name: 'Connaught Place', zoneId: zoneNorth.id },
     { postalCode: '110021', name: 'Chanakyapuri', zoneId: zoneNorth.id },
-    { postalCode: '560001', name: 'Majestic', zoneId: zoneSouth.id },
-    { postalCode: '560008', name: 'Indiranagar', zoneId: zoneSouth.id },
-    { postalCode: '400001', name: 'Fort', zoneId: zoneWest.id },
-    { postalCode: '400050', name: 'Bandra', zoneId: zoneWest.id },
+    { postalCode: '560001', name: 'Majestic Hub', zoneId: zoneSouth.id },
+    { postalCode: '560008', name: 'Indiranagar Core', zoneId: zoneSouth.id },
+    { postalCode: '400001', name: 'Fort Precinct', zoneId: zoneWest.id },
+    { postalCode: '400050', name: 'Bandra West', zoneId: zoneWest.id },
   ];
 
   for (const area of areas) {
@@ -134,7 +134,6 @@ async function main() {
   console.log('Agent Profiles created.');
 
   // 6. Create Rate Cards
-  // Intra-zone and Inter-zone rates for B2B & B2C
   const zones = [zoneNorth, zoneSouth, zoneWest];
   
   for (const fromZone of zones) {
@@ -168,7 +167,7 @@ async function main() {
   }
 
   console.log('Rate Cards created successfully.');
-  console.log('Seeding completed successfully!');
+  console.log('Database seeding complete!');
 }
 
 main()
