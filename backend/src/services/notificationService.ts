@@ -74,6 +74,8 @@ async function sendMail(to: string, subject: string, body: string, orderId: stri
         text: body,
       });
 
+      console.log(`[Notification Service] Email successfully sent to ${to} | Message ID: ${info.messageId}`);
+
       const previewUrl = nodemailer.getTestMessageUrl(info);
       if (previewUrl) {
         console.log(`[Notification Service] Live Email Link: ${previewUrl}`);
