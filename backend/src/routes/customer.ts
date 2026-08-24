@@ -144,13 +144,13 @@ router.post('/orders', async (req: AuthenticatedRequest, res: Response) => {
     });
 
     // 5. Send order placement notification
-    await sendStatusNotification(
+    sendStatusNotification(
       order.id,
       'PENDING',
       assignResult.success 
         ? `Order successfully placed and assigned to agent: ${assignResult.agentName}.`
         : 'Order placed. Waiting for agent assignment.'
-    );
+    ).catch(err => console.error('Notification error:', err));
 
     return res.status(201).json(finalOrder);
   } catch (error: any) {
@@ -275,14 +275,14 @@ router.post('/orders/:id/reschedule', async (req: AuthenticatedRequest, res: Res
       },
     });
 
-    await sendStatusNotification(
+    sendStatusNotification(
       orderId,
       'PENDING',
       `Order rescheduled for ${new Date(rescheduleDate).toLocaleDateString()}. ` +
       (assignResult.success 
         ? `Reassigned to delivery agent: ${assignResult.agentName}.`
         : 'Waiting for new agent assignment.')
-    );
+    ).catch(err => console.error('Notification error:', err));
 
     return res.json({
       message: 'Order rescheduled and agent reassigned.',

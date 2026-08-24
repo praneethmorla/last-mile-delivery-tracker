@@ -103,6 +103,8 @@ export async function sendStatusNotification(
 
     const orderIdShort = order.id.split('-')[0];
 
+    const emailPromises: Promise<any>[] = [];
+
     // 1. Customer Notification
     const customerEmail = order.customer.email;
     const customerSubject = `[DashMile] Shipment Booking Update for Order #${orderIdShort}: ${status}`;
@@ -129,7 +131,7 @@ export async function sendStatusNotification(
 
     customerBody += `Best regards,\nDashMile Logistics Team`;
     
-    await sendMail(customerEmail, customerSubject, customerBody, orderId);
+    emailPromises.push(sendMail(customerEmail, customerSubject, customerBody, orderId));
 
     // 2. Agent Notification (if assigned)
     if (order.agent) {
@@ -148,7 +150,7 @@ export async function sendStatusNotification(
       agentBody += `Please log in to your Agent Console to manage coordinates and update status milestones.\n\n`;
       agentBody += `Best regards,\nDashMile Dispatch Grid`;
 
-      await sendMail(agentEmail, agentSubject, agentBody, orderId);
+      emailPromises.push(sendMail(agentEmail, agentSubject, agentBody, orderId));
     }
 
     // 3. Admin Notification
@@ -168,8 +170,11 @@ export async function sendStatusNotification(
       adminBody += `You can review and manage this order in the Admin Control Panel.\n\n`;
       adminBody += `Best regards,\nDashMile System Audit`;
 
-      await sendMail(admin.email, adminSubject, adminBody, orderId);
+      emailPromises.push(sendMail(admin.email, adminSubject, adminBody, orderId));
     }
+
+    // Await all parallel mail dispatches
+    await Promise.all(emailPromises);
 
   } catch (error) {
     console.error('[Notification Service] Error sending notifications:', error);

@@ -132,7 +132,7 @@ router.post('/orders/:id/status', async (req: AuthenticatedRequest, res: Respons
     });
 
     // 4. Trigger customer notification
-    await sendStatusNotification(orderId, status, notes);
+    sendStatusNotification(orderId, status, notes).catch(err => console.error('Notification error:', err));
 
     return res.json(result);
   } catch (error: any) {

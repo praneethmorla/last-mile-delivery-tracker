@@ -394,7 +394,7 @@ router.post('/orders', async (req: AuthenticatedRequest, res: Response) => {
     });
 
     // Send order confirmation notification
-    await sendStatusNotification(newOrder.id, 'PENDING', 'Order placed by Administrator.');
+    sendStatusNotification(newOrder.id, 'PENDING', 'Order placed by Administrator.').catch(err => console.error('Notification error:', err));
 
     return res.status(201).json(finalOrder);
   } catch (error: any) {
@@ -492,7 +492,7 @@ router.post('/orders/:id/assign', async (req: AuthenticatedRequest, res: Respons
       }),
     ]);
 
-    await sendStatusNotification(orderId, 'ASSIGNED', `Assigned to delivery executive: ${agent.user.name}`);
+    sendStatusNotification(orderId, 'ASSIGNED', `Assigned to delivery executive: ${agent.user.name}`).catch(err => console.error('Notification error:', err));
 
     return res.json({ message: `Manually assigned to agent ${agent.user.name}` });
   } catch (error: any) {
@@ -535,7 +535,7 @@ router.post('/orders/:id/override-status', async (req: AuthenticatedRequest, res
       },
     });
 
-    await sendStatusNotification(orderId, status, notes || 'Order status updated by administrator override.');
+    sendStatusNotification(orderId, status, notes || 'Order status updated by administrator override.').catch(err => console.error('Notification error:', err));
 
     return res.json(updatedOrder);
   } catch (error) {
