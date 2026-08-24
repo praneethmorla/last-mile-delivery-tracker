@@ -2,9 +2,24 @@ import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateJWT, requireRole, AuthenticatedRequest } from '../middleware/auth';
 import { sendStatusNotification } from '../services/notificationService';
+import { autoAssignAgent } from '../services/autoAssignment';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+async function assignNextPendingOrder() {
+  try {
+    const oldestPending = await prisma.order.findFirst({
+      where: { status: 'PENDING', agentId: null },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (oldestPending) {
+      await autoAssignAgent(oldestPending.id);
+    }
+  } catch (err) {
+    console.error('Failed to auto-assign next pending order:', err);
+  }
+}
 
 // Authenticated agent routes
 router.use(authenticateJWT);
@@ -49,6 +64,10 @@ router.put('/profile', async (req: AuthenticatedRequest, res: Response) => {
       },
       include: { currentZone: true },
     });
+
+    if (updated.isAvailable) {
+      assignNextPendingOrder();
+    }
 
     return res.json(updated);
   } catch (error: any) {
@@ -133,6 +152,10 @@ router.post('/orders/:id/status', async (req: AuthenticatedRequest, res: Respons
 
     // 4. Trigger customer notification
     sendStatusNotification(orderId, status, notes).catch(err => console.error('Notification error:', err));
+
+    if (['DELIVERED', 'FAILED'].includes(status)) {
+      assignNextPendingOrder();
+    }
 
     return res.json(result);
   } catch (error: any) {

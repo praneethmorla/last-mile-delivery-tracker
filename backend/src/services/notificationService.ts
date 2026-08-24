@@ -12,11 +12,16 @@ async function getTransporter() {
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: parseInt(process.env.SMTP_PORT || '587'),
+      family: 4, // Force IPv4 to bypass Windows DNS query timeouts
+      secure: false,
+      tls: {
+        rejectUnauthorized: false // Bypasses certificate name mismatches when using direct SMTP IP addresses
+      },
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
-    });
+    } as any);
   } else {
     try {
       const testAccount = await nodemailer.createTestAccount();
