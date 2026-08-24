@@ -9,11 +9,12 @@ async function getTransporter() {
   if (transporter) return transporter;
 
   if (process.env.SMTP_HOST) {
+    const port = parseInt(process.env.SMTP_PORT || '587');
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
+      port,
       family: 4, // Force IPv4 to bypass Windows DNS query timeouts
-      secure: false,
+      secure: port === 465, // Use true for port 465 (SSL), false for 587 (TLS/STARTTLS)
       tls: {
         rejectUnauthorized: false // Bypasses certificate name mismatches when using direct SMTP IP addresses
       },
