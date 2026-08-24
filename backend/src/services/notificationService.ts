@@ -10,6 +10,7 @@ async function getTransporter() {
 
   if (process.env.SMTP_HOST) {
     const port = parseInt(process.env.SMTP_PORT || '587');
+    console.log(`[Notification Service] Initializing transporter: host=${process.env.SMTP_HOST}, port=${port}, secure=${port === 465}`);
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port,
