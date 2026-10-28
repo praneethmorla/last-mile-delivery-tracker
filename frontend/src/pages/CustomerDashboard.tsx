@@ -21,7 +21,9 @@ import {
   MapPin,
   Calendar,
   Layers,
-  Sparkles
+  Sparkles,
+  Phone,
+  User as UserIcon
 } from 'lucide-react';
 
 interface Area {
@@ -33,10 +35,15 @@ interface Area {
 
 interface Order {
   id: string;
+  customerName?: string;
+  customerPhone?: string;
+  receiverName?: string;
+  receiverPhone?: string;
   pickupAddress: string;
   pickupArea: Area;
   dropAddress: string;
   dropArea: Area;
+  distanceKm?: number;
   length: number;
   width: number;
   height: number;
@@ -65,7 +72,7 @@ interface TimelineItem {
 }
 
 export default function CustomerDashboard() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -90,7 +97,20 @@ export default function CustomerDashboard() {
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Form Fields
+  // Customer / Sender & Receiver Details
+  const [customerName, setCustomerName] = useState(user?.name || '');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [receiverName, setReceiverName] = useState('');
+  const [receiverPhone, setReceiverPhone] = useState('');
+
+  // Sync user name when user loads
+  useEffect(() => {
+    if (user?.name && !customerName) {
+      setCustomerName(user.name);
+    }
+  }, [user]);
+
+  // Form Fields - Source & Destination
   const [pickupAddress, setPickupAddress] = useState('');
   const [pickupAreaId, setPickupAreaId] = useState('');
   const [dropAddress, setDropAddress] = useState('');
@@ -241,6 +261,10 @@ export default function CustomerDashboard() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          customerName,
+          customerPhone,
+          receiverName,
+          receiverPhone,
           pickupAddress,
           pickupAreaId,
           dropAddress,
@@ -259,6 +283,9 @@ export default function CustomerDashboard() {
 
       setPickupAddress('');
       setDropAddress('');
+      setCustomerPhone('');
+      setReceiverName('');
+      setReceiverPhone('');
       setSizePreset('small');
       setPricingPreview(null);
       await fetchOrders();
@@ -416,80 +443,174 @@ export default function CustomerDashboard() {
           </div>
 
           <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-            {/* Left Column: Pickup, Drop, and Package Size (md:col-span-7) */}
+            {/* Left Column: Contact details, Pickup/Drop addresses, Package size (md:col-span-7) */}
             <div className="md:col-span-7 space-y-5">
               
-              {/* Card 1: Route & Waypoints */}
+              {/* Card 1: Customer & Recipient Contact Details */}
               <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-5 sm:p-6 space-y-4">
                 <div className="flex items-center space-x-2 text-xs font-bold text-zinc-900 pb-2 border-b border-zinc-100">
-                  <MapPin className="w-4 h-4 text-indigo-600" />
-                  <span>Pickup & Dropoff Locations</span>
+                  <UserIcon className="w-4 h-4 text-indigo-600" />
+                  <span>Customer & Contact Details</span>
                 </div>
 
-                {/* Pickup Address */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center text-xs font-bold text-zinc-700">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
-                    Pickup Location (From)
-                  </label>
-                  <select
-                    value={pickupAreaId}
-                    onChange={(e) => setPickupAreaId(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 font-medium text-zinc-800"
-                  >
-                    {areas.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.postalCode} — {a.name} ({a.zone.name})
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    required
-                    value={pickupAddress}
-                    onChange={(e) => setPickupAddress(e.target.value)}
-                    placeholder="Enter street address, building, floor or flat no."
-                    className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-zinc-900"
-                  />
-                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Sender / Customer Details */}
+                  <div className="space-y-3 p-3.5 bg-zinc-50/70 border border-zinc-200/70 rounded-xl">
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                      Sender (Customer)
+                    </span>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-zinc-700 mb-1">Customer / Sender Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="Your full name"
+                        className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-zinc-700 mb-1">Mobile Number</label>
+                      <div className="relative">
+                        <Phone className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-zinc-400" />
+                        <input
+                          type="tel"
+                          required
+                          value={customerPhone}
+                          onChange={(e) => setCustomerPhone(e.target.value)}
+                          placeholder="10-digit phone number"
+                          pattern="[0-9]{10}"
+                          title="Please enter a valid 10-digit mobile number"
+                          className="w-full pl-8 pr-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-                <div className="relative py-0.5">
-                  <div className="border-t border-dashed border-zinc-200"></div>
-                </div>
-
-                {/* Drop Address */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center text-xs font-bold text-zinc-700">
-                    <span className="w-2 h-2 rounded-full bg-indigo-600 mr-2"></span>
-                    Delivery Location (To)
-                  </label>
-                  <select
-                    value={dropAreaId}
-                    onChange={(e) => setDropAreaId(e.target.value)}
-                    className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 font-medium text-zinc-800"
-                  >
-                    {areas.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.postalCode} — {a.name} ({a.zone.name})
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    required
-                    value={dropAddress}
-                    onChange={(e) => setDropAddress(e.target.value)}
-                    placeholder="Enter destination street address, landmark, apartment"
-                    className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-zinc-900"
-                  />
+                  {/* Recipient Details */}
+                  <div className="space-y-3 p-3.5 bg-zinc-50/70 border border-zinc-200/70 rounded-xl">
+                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                      Recipient (Receiver)
+                    </span>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-zinc-700 mb-1">Receiver Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={receiverName}
+                        onChange={(e) => setReceiverName(e.target.value)}
+                        placeholder="Recipient's name"
+                        className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-zinc-700 mb-1">Receiver Mobile Number</label>
+                      <div className="relative">
+                        <Phone className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-zinc-400" />
+                        <input
+                          type="tel"
+                          required
+                          value={receiverPhone}
+                          onChange={(e) => setReceiverPhone(e.target.value)}
+                          placeholder="10-digit phone number"
+                          pattern="[0-9]{10}"
+                          title="Please enter a valid 10-digit mobile number"
+                          className="w-full pl-8 pr-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Card 2: Package Size & Category */}
+              {/* Card 2: Source & Destination Addresses */}
+              <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-5 sm:p-6 space-y-4">
+                <div className="flex items-center space-x-2 text-xs font-bold text-zinc-900 pb-2 border-b border-zinc-100">
+                  <MapPin className="w-4 h-4 text-indigo-600" />
+                  <span>Source & Destination Addresses</span>
+                </div>
+
+                {/* Source (Pickup) Address */}
+                <div className="space-y-1.5">
+                  <label className="flex items-center text-xs font-bold text-zinc-800">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 flex-shrink-0"></span>
+                    Source Address (Pickup Location)
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] text-zinc-400 font-semibold mb-1">Source Postal Hub</label>
+                      <select
+                        value={pickupAreaId}
+                        onChange={(e) => setPickupAreaId(e.target.value)}
+                        className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 font-medium text-zinc-800"
+                      >
+                        {areas.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.postalCode} — {a.name} ({a.zone.name})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-zinc-400 font-semibold mb-1">Source Street Address</label>
+                      <input
+                        type="text"
+                        required
+                        value={pickupAddress}
+                        onChange={(e) => setPickupAddress(e.target.value)}
+                        placeholder="Door / Flat, Building, Street, Landmark"
+                        className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative py-1">
+                  <div className="border-t border-dashed border-zinc-200"></div>
+                </div>
+
+                {/* Destination (Dropoff) Address */}
+                <div className="space-y-1.5">
+                  <label className="flex items-center text-xs font-bold text-zinc-800">
+                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 mr-2 flex-shrink-0"></span>
+                    Destination Address (Drop Location)
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] text-zinc-400 font-semibold mb-1">Destination Postal Hub</label>
+                      <select
+                        value={dropAreaId}
+                        onChange={(e) => setDropAreaId(e.target.value)}
+                        className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 font-medium text-zinc-800"
+                      >
+                        {areas.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.postalCode} — {a.name} ({a.zone.name})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-zinc-400 font-semibold mb-1">Destination Street Address</label>
+                      <input
+                        type="text"
+                        required
+                        value={dropAddress}
+                        onChange={(e) => setDropAddress(e.target.value)}
+                        placeholder="Apartment, Floor, Street, Landmark"
+                        className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Package Size & Options */}
               <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-5 sm:p-6 space-y-4">
                 <div className="flex items-center space-x-2 text-xs font-bold text-zinc-900 pb-2 border-b border-zinc-100">
                   <Package className="w-4 h-4 text-indigo-600" />
-                  <span>Package Size</span>
+                  <span>Package Size & Preferences</span>
                 </div>
 
                 {/* Preset Options */}
@@ -662,13 +783,13 @@ export default function CustomerDashboard() {
 
             </div>
 
-            {/* Right Column: Order Summary & Place Order Button (md:col-span-5) */}
+            {/* Right Column: Distance-Based Fare Summary & Place Order CTA (md:col-span-5) */}
             <div className="md:col-span-5 space-y-4">
               <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-5 sm:p-6 space-y-5 md:sticky md:top-20">
                 <h2 className="text-sm font-bold text-zinc-900 pb-3 border-b border-zinc-100 flex items-center justify-between">
-                  <span>Fare Summary</span>
-                  <span className="text-[10px] font-mono text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded">
-                    Live Rate
+                  <span>Fare Breakdown</span>
+                  <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded font-bold">
+                    Distance-Based
                   </span>
                 </h2>
 
@@ -678,10 +799,32 @@ export default function CustomerDashboard() {
 
                 {pricingPreview ? (
                   <div className="space-y-3 text-xs">
-                    <div className="flex justify-between text-zinc-600">
-                      <span>Delivery Charge</span>
+                    {/* Distance Metric Box */}
+                    <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-zinc-600 font-semibold flex items-center">
+                          <Compass className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
+                          Source → Destination:
+                        </span>
+                        <span className="font-mono font-bold text-zinc-900 bg-white px-2 py-0.5 rounded border border-zinc-200 text-xs">
+                          {pricingPreview.distanceKm} km
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-[11px] text-zinc-500 pt-0.5">
+                        <span>Distance Fare:</span>
+                        <span className="font-mono font-bold text-zinc-800">
+                          ₹{(pricingPreview.distanceCharge || 0).toFixed(2)}
+                          <span className="text-zinc-400 text-[10px] ml-1 font-normal">
+                            ({pricingPreview.distanceKm} km @ ₹{pricingPreview.ratePerKm || 5}/km)
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between text-zinc-600 pt-1">
+                      <span>Base Pickup & Cargo Rate</span>
                       <span className="font-semibold text-zinc-900 font-mono">
-                        ₹{pricingPreview.deliveryCharge.toFixed(2)}
+                        ₹{((pricingPreview.baseCharge || 0) + (pricingPreview.weightCharge || 0)).toFixed(2)}
                       </span>
                     </div>
 
@@ -706,12 +849,12 @@ export default function CustomerDashboard() {
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                         <span>Auto-Dispatch Enabled</span>
                       </div>
-                      <p>Nearest available courier executive will be dispatched to the pickup address.</p>
+                      <p>Nearest courier executive will be dispatched to the source pickup address.</p>
                     </div>
                   </div>
                 ) : (
                   <div className="py-6 text-center text-xs text-zinc-400">
-                    Select origin and destination hubs to view live fare.
+                    Select source and destination hubs to calculate distance and fare.
                   </div>
                 )}
 
@@ -891,14 +1034,45 @@ export default function CustomerDashboard() {
 
                 {/* Waybill Card */}
                 <div className="space-y-3 text-xs">
+                  {/* Customer (Sender) & Recipient Contact Badges */}
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="p-2.5 rounded-lg border border-zinc-200/70 bg-zinc-50">
+                      <span className="text-zinc-400 block text-[10px] font-bold uppercase">Customer (Sender)</span>
+                      <span className="font-bold text-zinc-900 block truncate">{selectedOrder.customerName || 'Customer'}</span>
+                      {selectedOrder.customerPhone && (
+                        <span className="text-[10px] text-zinc-500 font-mono flex items-center mt-0.5">
+                          <Phone className="w-2.5 h-2.5 mr-1 text-zinc-400" />
+                          {selectedOrder.customerPhone}
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-2.5 rounded-lg border border-zinc-200/70 bg-zinc-50">
+                      <span className="text-zinc-400 block text-[10px] font-bold uppercase">Recipient (Receiver)</span>
+                      <span className="font-bold text-zinc-900 block truncate">{selectedOrder.receiverName || 'Recipient'}</span>
+                      {selectedOrder.receiverPhone && (
+                        <span className="text-[10px] text-zinc-500 font-mono flex items-center mt-0.5">
+                          <Phone className="w-2.5 h-2.5 mr-1 text-zinc-400" />
+                          {selectedOrder.receiverPhone}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-2">
-                    <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Waypoint Route</div>
+                    <div className="flex items-center justify-between text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                      <span>Waypoint Route</span>
+                      {selectedOrder.distanceKm && (
+                        <span className="font-mono text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 font-bold">
+                          {selectedOrder.distanceKm} km
+                        </span>
+                      )}
+                    </div>
                     <div className="space-y-1">
                       <p className="text-zinc-600">
-                        <strong className="text-zinc-900">Pickup:</strong> {selectedOrder.pickupAddress} ({selectedOrder.pickupArea.name})
+                        <strong className="text-zinc-900">Source:</strong> {selectedOrder.pickupAddress} ({selectedOrder.pickupArea.name})
                       </p>
                       <p className="text-zinc-600">
-                        <strong className="text-zinc-900">Drop:</strong> {selectedOrder.dropAddress} ({selectedOrder.dropArea.name})
+                        <strong className="text-zinc-900">Destination:</strong> {selectedOrder.dropAddress} ({selectedOrder.dropArea.name})
                       </p>
                     </div>
                   </div>

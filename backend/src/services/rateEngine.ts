@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { POSTAL_CODE_COORDINATES, calculateDistance } from './autoAssignment';
 
 const prisma = new PrismaClient();
 
@@ -18,7 +19,11 @@ export interface RateCalculationResult {
   chargeableWeight: number;
   pickupZoneId: string;
   dropZoneId: string;
+  distanceKm: number;
+  distanceCharge: number;
+  ratePerKm: number;
   baseCharge: number;
+  weightCharge: number;
   ratePerKg: number;
   codSurcharge: number;
   deliveryCharge: number;
@@ -43,13 +48,25 @@ export async function calculateOrderCharge(input: RateCalculationInput): Promise
     throw new Error('Invalid pickup or drop area specified.');
   }
 
-  // 2. Calculate volumetric weight (L * W * H / 5000)
+  // 2. Calculate geodesic distance between source and destination
+  const pickupCoords = POSTAL_CODE_COORDINATES[pickupArea.postalCode] || { lat: 28.6304, lng: 77.2177 };
+  const dropCoords = POSTAL_CODE_COORDINATES[dropArea.postalCode] || { lat: 28.6304, lng: 77.2177 };
+
+  let rawDistance = calculateDistance(pickupCoords.lat, pickupCoords.lng, dropCoords.lat, dropCoords.lng);
+  
+  // If same postal hub, assign realistic intra-precinct delivery distance
+  if (pickupArea.postalCode === dropArea.postalCode || rawDistance < 1.0) {
+    rawDistance = 2.5;
+  }
+  const distanceKm = Math.round(rawDistance * 10) / 10;
+
+  // 3. Calculate volumetric weight (L * W * H / 5000)
   const volumetricWeight = (length * width * height) / 5000;
 
-  // 3. Determine chargeable weight (higher of actual vs volumetric)
+  // 4. Determine chargeable weight (higher of actual vs volumetric)
   const chargeableWeight = Math.max(actualWeight, volumetricWeight);
 
-  // 4. Look up rate card
+  // 5. Look up rate card
   const rateCard = await prisma.rateCard.findFirst({
     where: {
       fromZoneId: pickupArea.zoneId,
@@ -64,25 +81,39 @@ export async function calculateOrderCharge(input: RateCalculationInput): Promise
     );
   }
 
-  // 5. Calculate charges
-  // Formula: Base Charge + (Rate Per Kg * Chargeable Weight)
+  // 6. Calculate distance-based pricing
+  const isIntraZone = pickupArea.zoneId === dropArea.zoneId;
+  const ratePerKm = orderType === 'B2B' ? 6.0 : 5.0; // ₹5/km for B2C, ₹6/km for B2B
+
+  const distanceCharge = isIntraZone
+    ? Math.round(distanceKm * ratePerKm * 100) / 100
+    : Math.round(Math.min(distanceKm * 0.15, 120) * 100) / 100;
+
+  // Base charge and weight charge
   const baseCharge = rateCard.baseCharge;
   const ratePerKg = rateCard.ratePerKg;
-  const deliveryCharge = baseCharge + (ratePerKg * chargeableWeight);
+  const weightCharge = Math.round(ratePerKg * chargeableWeight * 100) / 100;
+
+  // Total delivery charge = Base Charge + Distance Charge + Weight Charge
+  const deliveryCharge = Math.round((baseCharge + distanceCharge + weightCharge) * 100) / 100;
 
   // Add COD surcharge if applicable
   const codSurcharge = paymentType === 'COD' ? rateCard.codSurcharge : 0.0;
-  const totalCharge = deliveryCharge + codSurcharge;
+  const totalCharge = Math.round((deliveryCharge + codSurcharge) * 100) / 100;
 
   return {
-    volumetricWeight,
-    chargeableWeight,
+    volumetricWeight: Math.round(volumetricWeight * 100) / 100,
+    chargeableWeight: Math.round(chargeableWeight * 100) / 100,
     pickupZoneId: pickupArea.zoneId,
     dropZoneId: dropArea.zoneId,
+    distanceKm,
+    distanceCharge,
+    ratePerKm,
     baseCharge,
+    weightCharge,
     ratePerKg,
     codSurcharge,
     deliveryCharge,
-    totalCharge: Math.round(totalCharge * 100) / 100, // round to 2 decimal places
+    totalCharge,
   };
 }

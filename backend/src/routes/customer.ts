@@ -56,6 +56,10 @@ router.post('/orders', async (req: AuthenticatedRequest, res: Response) => {
   if (!customerId) return res.status(401).json({ error: 'Unauthorized.' });
 
   const {
+    customerName,
+    customerPhone,
+    receiverName,
+    receiverPhone,
     pickupAddress,
     pickupAreaId,
     dropAddress,
@@ -100,10 +104,15 @@ router.post('/orders', async (req: AuthenticatedRequest, res: Response) => {
     const order = await prisma.order.create({
       data: {
         customerId,
+        customerName: customerName || req.user?.name || 'Valued Client',
+        customerPhone: customerPhone || null,
+        receiverName: receiverName || null,
+        receiverPhone: receiverPhone || null,
         pickupAddress,
         pickupAreaId,
         dropAddress,
         dropAreaId,
+        distanceKm: pricing.distanceKm,
         length: parseFloat(length),
         width: parseFloat(width),
         height: parseFloat(height),

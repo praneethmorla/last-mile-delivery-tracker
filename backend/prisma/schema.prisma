@@ -84,6 +84,13 @@ model Order {
   id               String   @id @default(uuid())
   customerId       String
   customer         User     @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: Cascade)
+
+  // Customer & Contact Details
+  customerName     String?
+  customerPhone    String?
+  receiverName     String?
+  receiverPhone    String?
+
   pickupAddress    String
   pickupAreaId     String
   pickupArea       Area     @relation("PickupArea", fields: [pickupAreaId], references: [id])
@@ -91,6 +98,9 @@ model Order {
   dropAreaId       String
   dropArea         Area     @relation("DropArea", fields: [dropAreaId], references: [id])
   
+  // Route Distance (in km)
+  distanceKm       Float?
+
   // Package dimensions and weight
   length           Float    // in cm
   width            Float    // in cm
