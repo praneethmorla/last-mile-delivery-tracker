@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
 import {
   Package,
+  PackagePlus,
   Calculator,
   Compass,
   CheckCircle2,
@@ -64,9 +66,16 @@ interface TimelineItem {
 
 export default function CustomerDashboard() {
   const { token } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // Tab State
-  const [activeSubTab, setActiveSubTab] = useState<'booking' | 'history'>('booking');
+  // Tab State derived from route path
+  const isHistory = location.pathname.includes('/history');
+  const activeSubTab: 'booking' | 'history' = isHistory ? 'history' : 'booking';
+
+  const setActiveSubTab = (tab: 'booking' | 'history') => {
+    navigate(tab === 'history' ? '/customer/history' : '/customer/booking');
+  };
 
   // Master Data State
   const [areas, setAreas] = useState<Area[]>([]);
@@ -347,89 +356,7 @@ export default function CustomerDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* 1. KEY PERFORMANCE METRICS BENTO */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm card-hover flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Total Logistics Spend</span>
-            <h3 className="text-2xl font-black text-zinc-900 tracking-tight">
-              ₹{totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </h3>
-            <span className="text-[10px] text-zinc-500 font-medium">{orders.length} total shipments booked</span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center text-indigo-600">
-            <Coins className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm card-hover flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Active Dispatches</span>
-            <h3 className="text-2xl font-black text-zinc-900 tracking-tight">{activeCount}</h3>
-            <span className="text-[10px] text-amber-600 font-medium flex items-center">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1 animate-pulse"></span>
-              Live on route
-            </span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100/80 flex items-center justify-center text-amber-600">
-            <Truck className="w-6 h-6" />
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm card-hover flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Completed Orders</span>
-            <h3 className="text-2xl font-black text-zinc-900 tracking-tight">{completedCount}</h3>
-            <span className="text-[10px] text-emerald-600 font-medium">100% Verified Delivery</span>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-emerald-600">
-            <Boxes className="w-6 h-6" />
-          </div>
-        </div>
-      </div>
-
-      {/* 2. PAGE HEADER & VIEW SELECTOR */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-5 rounded-2xl border border-zinc-200/80 shadow-sm gap-4">
-        <div>
-          <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold tracking-tight text-zinc-900">Shipment Management</h1>
-            <span className="text-[10px] font-mono bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded border border-zinc-200 font-bold">
-              PORTAL
-            </span>
-          </div>
-          <p className="text-xs text-zinc-500 mt-1 font-medium">
-            Book consignments, configure volumetric parameters, and inspect immutable audit logs.
-          </p>
-        </div>
-
-        {/* Tab Buttons */}
-        <div className="flex bg-zinc-100/80 p-1 rounded-xl border border-zinc-200/60 text-xs font-semibold">
-          <button
-            onClick={() => setActiveSubTab('booking')}
-            className={`px-4 py-2 rounded-lg transition-all flex items-center space-x-2 ${
-              activeSubTab === 'booking'
-                ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60'
-                : 'text-zinc-600 hover:text-zinc-900'
-            }`}
-          >
-            <Package className="w-4 h-4 text-indigo-600" />
-            <span>Create Booking</span>
-          </button>
-          <button
-            onClick={() => setActiveSubTab('history')}
-            className={`px-4 py-2 rounded-lg transition-all flex items-center space-x-2 ${
-              activeSubTab === 'history'
-                ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60'
-                : 'text-zinc-600 hover:text-zinc-900'
-            }`}
-          >
-            <History className="w-4 h-4 text-zinc-500" />
-            <span>Order History ({orders.length})</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Notifications */}
+      {/* Top Notifications */}
       {successMsg && (
         <div className="bg-emerald-50/80 text-emerald-800 px-4 py-3 rounded-xl border border-emerald-200 text-xs font-semibold flex items-center animate-fadeIn shadow-sm">
           <CheckCircle2 className="h-4 w-4 text-emerald-600 mr-2 flex-shrink-0" />
@@ -443,11 +370,206 @@ export default function CustomerDashboard() {
         </div>
       )}
 
+      {/* Main Responsive Grid: Dedicated Left Side Navigation & Right Side Workspace */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* LEFT COLUMN: Customer Navigation & Snapshot Metrics */}
+        <div className="lg:col-span-4 xl:col-span-3 space-y-4 lg:sticky lg:top-20">
+          {/* 1. Primary Left Navigation Menu */}
+          <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/60">
+              <div className="flex items-center space-x-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Customer Actions</span>
+              </div>
+              <span className="text-[10px] font-mono font-bold bg-zinc-100 text-zinc-600 px-1.5 py-0.5 rounded border border-zinc-200">
+                Portal
+              </span>
+            </div>
+
+            <div className="p-2 space-y-1.5">
+              {/* Left Action: Place Order */}
+              <button
+                type="button"
+                onClick={() => setActiveSubTab('booking')}
+                className={`w-full text-left p-3 rounded-xl transition-all flex items-center space-x-3 group ${
+                  activeSubTab === 'booking'
+                    ? 'bg-zinc-900 text-white shadow-md shadow-zinc-900/15'
+                    : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900'
+                }`}
+              >
+                <div
+                  className={`p-2 rounded-lg flex-shrink-0 transition-colors ${
+                    activeSubTab === 'booking'
+                      ? 'bg-zinc-800 text-indigo-400'
+                      : 'bg-zinc-100 text-zinc-600 group-hover:bg-zinc-200/70 group-hover:text-zinc-900'
+                  }`}
+                >
+                  <PackagePlus className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold tracking-tight">Place Order</span>
+                    {activeSubTab === 'booking' && (
+                      <span className="text-[9px] font-mono bg-indigo-500/20 text-indigo-300 font-bold px-1.5 py-0.2 rounded border border-indigo-400/30">
+                        ACTIVE
+                      </span>
+                    )}
+                  </div>
+                  <p
+                    className={`text-[11px] mt-0.5 truncate ${
+                      activeSubTab === 'booking' ? 'text-zinc-400' : 'text-zinc-400'
+                    }`}
+                  >
+                    New booking & dispatch
+                  </p>
+                </div>
+              </button>
+
+              {/* Left Action: Order History */}
+              <button
+                type="button"
+                onClick={() => setActiveSubTab('history')}
+                className={`w-full text-left p-3 rounded-xl transition-all flex items-center space-x-3 group ${
+                  activeSubTab === 'history'
+                    ? 'bg-zinc-900 text-white shadow-md shadow-zinc-900/15'
+                    : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900'
+                }`}
+              >
+                <div
+                  className={`p-2 rounded-lg flex-shrink-0 transition-colors ${
+                    activeSubTab === 'history'
+                      ? 'bg-zinc-800 text-indigo-400'
+                      : 'bg-zinc-100 text-zinc-600 group-hover:bg-zinc-200/70 group-hover:text-zinc-900'
+                  }`}
+                >
+                  <History className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold tracking-tight">Order History</span>
+                    <span
+                      className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full ${
+                        activeSubTab === 'history'
+                          ? 'bg-zinc-800 text-zinc-200 border border-zinc-700'
+                          : 'bg-zinc-200/80 text-zinc-700'
+                      }`}
+                    >
+                      {orders.length}
+                    </span>
+                  </div>
+                  <p
+                    className={`text-[11px] mt-0.5 truncate ${
+                      activeSubTab === 'history' ? 'text-zinc-400' : 'text-zinc-400'
+                    }`}
+                  >
+                    Track status & audit logs
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Left Snapshot Analytics */}
+          <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-4 space-y-3">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block px-0.5">
+              Account Overview
+            </span>
+
+            <div className="p-3 rounded-xl bg-zinc-50/70 border border-zinc-200/60 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-zinc-400 font-bold uppercase block">Logistics Spend</span>
+                <span className="text-base font-extrabold text-zinc-900 font-mono tracking-tight">
+                  ₹{totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center">
+                <Coins className="w-4 h-4" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-2.5 rounded-xl bg-zinc-50/70 border border-zinc-200/60">
+                <div className="flex items-center justify-between text-zinc-400 mb-0.5">
+                  <span className="text-[10px] font-bold uppercase">Active</span>
+                  <Truck className="w-3.5 h-3.5 text-amber-500" />
+                </div>
+                <div className="flex items-baseline space-x-1">
+                  <span className="text-lg font-black text-zinc-900">{activeCount}</span>
+                  <span className="text-[9px] text-amber-600 font-medium">on route</span>
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-zinc-50/70 border border-zinc-200/60">
+                <div className="flex items-center justify-between text-zinc-400 mb-0.5">
+                  <span className="text-[10px] font-bold uppercase">Delivered</span>
+                  <Boxes className="w-3.5 h-3.5 text-emerald-500" />
+                </div>
+                <div className="flex items-baseline space-x-1">
+                  <span className="text-lg font-black text-zinc-900">{completedCount}</span>
+                  <span className="text-[9px] text-emerald-600 font-medium">verified</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Left System Heuristics Note */}
+          <div className="p-4 rounded-2xl bg-zinc-900 text-white shadow-sm space-y-2">
+            <div className="flex items-center space-x-2">
+              <Sparkles className="w-4 h-4 text-indigo-400" />
+              <span className="text-xs font-bold tracking-tight">Autonomous Dispatch</span>
+            </div>
+            <p className="text-[11px] text-zinc-400 leading-relaxed">
+              Consignments are automatically evaluated via <span className="text-indigo-300 font-mono text-[10px]">(L×W×H)/5000</span> and assigned to the nearest courier agent by proximity heuristics.
+            </p>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Active Workspace (Place Order or Order History) */}
+        <div className="lg:col-span-8 xl:col-span-9 space-y-6 min-w-0">
+          {/* Workspace Title Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-5 rounded-2xl border border-zinc-200/80 shadow-sm gap-4">
+            <div>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-xl font-bold tracking-tight text-zinc-900">
+                  {activeSubTab === 'booking' ? 'Place Consignment Order' : 'Order History & Audit Ledger'}
+                </h1>
+                <span className="text-[10px] font-mono bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded border border-zinc-200 font-bold uppercase">
+                  {activeSubTab === 'booking' ? 'New Dispatch' : 'Immutable Records'}
+                </span>
+              </div>
+              <p className="text-xs text-zinc-500 mt-1 font-medium">
+                {activeSubTab === 'booking'
+                  ? 'Configure origin, destination, cargo metrics, and auto-dispatch the nearest courier agent.'
+                  : 'Inspect live tracking statuses, delivery waypoints, courier assignments, and reschedule if required.'}
+              </p>
+            </div>
+
+            {activeSubTab === 'history' ? (
+              <button
+                type="button"
+                onClick={() => setActiveSubTab('booking')}
+                className="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-zinc-900 hover:bg-zinc-800 shadow-sm transition"
+              >
+                <PackagePlus className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Place New Order</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setActiveSubTab('history')}
+                className="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200/80 transition"
+              >
+                <History className="w-3.5 h-3.5 text-zinc-500" />
+                <span>View History ({orders.length})</span>
+              </button>
+            )}
+          </div>
+
       {/* ==================================================== */}
       {/* 3. CREATE BOOKING VIEW */}
       {/* ==================================================== */}
       {activeSubTab === 'booking' && (
-        <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 sm:p-8 animate-fadeIn">
+        <div className="w-full bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 sm:p-8 animate-fadeIn">
           <div className="flex items-center space-x-3 pb-5 mb-6 border-b border-zinc-100">
             <div className="w-9 h-9 rounded-xl bg-zinc-900 text-white flex items-center justify-center">
               <Package className="w-4 h-4 text-indigo-400" />
@@ -686,9 +808,9 @@ export default function CustomerDashboard() {
       {/* 4. ORDER HISTORY VIEW */}
       {/* ==================================================== */}
       {activeSubTab === 'history' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 animate-fadeIn">
           {/* Main Table Column */}
-          <div className={`${selectedOrder ? 'lg:col-span-2' : 'lg:col-span-3'} bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-4`}>
+          <div className={`${selectedOrder ? 'xl:col-span-7' : 'xl:col-span-12'} bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-4`}>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-zinc-100 gap-3">
               <div className="flex items-center space-x-2.5">
                 <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
@@ -773,7 +895,7 @@ export default function CustomerDashboard() {
 
           {/* Active Order Details Panel */}
           {selectedOrder && (
-            <div className="lg:col-span-1 bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-6 animate-fadeIn self-start">
+            <div className="xl:col-span-5 bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-6 animate-fadeIn self-start">
               <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
                 <div className="flex items-center space-x-2">
                   <span className="text-xs font-bold text-zinc-900 font-mono">
@@ -886,6 +1008,8 @@ export default function CustomerDashboard() {
           )}
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

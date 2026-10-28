@@ -18,7 +18,9 @@ import {
   Clock,
   Compass,
   CreditCard,
-  Users
+  Users,
+  PackagePlus,
+  History
 } from 'lucide-react';
 
 interface User {
@@ -135,7 +137,8 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean; setCollapsed
 
   const navLinks = [
     ...(user.role === 'CUSTOMER' ? [
-      { name: 'Dashboard & Bookings', path: '/customer', icon: Package },
+      { name: 'Place Order', path: '/customer/booking', icon: PackagePlus },
+      { name: 'Order History', path: '/customer/history', icon: History },
     ] : []),
     ...(user.role === 'AGENT' ? [
       { name: 'Deliveries & Tasks', path: '/agent', icon: Truck },
@@ -203,7 +206,8 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean; setCollapsed
         </div>
         {navLinks.map((link) => {
           const Icon = link.icon;
-          const isActive = location.pathname.startsWith(link.path);
+          const isBookingDefault = link.path === '/customer/booking' && (location.pathname === '/customer' || location.pathname === '/customer/');
+          const isActive = location.pathname.startsWith(link.path) || isBookingDefault;
           return (
             <Link
               key={link.path}
@@ -344,6 +348,14 @@ export default function App() {
                       />
                       <Route
                         path="/customer"
+                        element={
+                          <ProtectedRoute allowedRoles={['CUSTOMER']}>
+                            <CustomerDashboard />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/customer/*"
                         element={
                           <ProtectedRoute allowedRoles={['CUSTOMER']}>
                             <CustomerDashboard />
