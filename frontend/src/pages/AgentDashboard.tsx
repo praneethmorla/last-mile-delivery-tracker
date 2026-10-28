@@ -16,7 +16,8 @@ import {
   ShieldCheck,
   Building,
   User,
-  Clock
+  Clock,
+  Navigation
 } from 'lucide-react';
 
 interface Order {
@@ -152,6 +153,27 @@ export default function AgentDashboard() {
     } catch (e) {
       showError('Failed to update coordinates.');
     }
+  };
+
+  const handleDetectGPS = () => {
+    if (!navigator.geolocation) {
+      showError('Geolocation is not supported by your browser.');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude.toFixed(4);
+        const lng = pos.coords.longitude.toFixed(4);
+        setNewLat(lat);
+        setNewLng(lng);
+        setEditingLoc(true);
+        showSuccess(`Live GPS lock acquired: ${lat}, ${lng}. Click "Save Coordinates" to commit.`);
+      },
+      (err) => {
+        showError(`Could not detect device GPS: ${err.message}`);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handleStatusUpdate = async (e: React.FormEvent) => {
@@ -420,6 +442,15 @@ export default function AgentDashboard() {
                   </div>
                   <div className="flex space-x-2 pt-1 text-xs">
                     <button
+                      type="button"
+                      onClick={handleDetectGPS}
+                      className="px-2.5 py-1.5 rounded-lg border border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 font-bold transition flex items-center space-x-1"
+                      title="Read GPS sensor from device"
+                    >
+                      <Navigation className="w-3.5 h-3.5" />
+                      <span>Device GPS</span>
+                    </button>
+                    <button
                       type="submit"
                       className="flex-1 bg-zinc-900 text-white font-bold py-1.5 px-3 rounded-lg hover:bg-zinc-800 transition"
                     >
@@ -435,13 +466,22 @@ export default function AgentDashboard() {
                   </div>
                 </form>
               ) : (
-                <button
-                  onClick={() => setEditingLoc(true)}
-                  className="w-full border border-zinc-200 hover:border-zinc-900 text-zinc-700 hover:text-zinc-900 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition bg-white shadow-sm"
-                >
-                  <Edit2 className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>Calibrate Coordinates</span>
-                </button>
+                <div className="space-y-2">
+                  <button
+                    onClick={handleDetectGPS}
+                    className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition shadow-sm"
+                  >
+                    <Navigation className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
+                    <span>Detect Device GPS (Live Lock)</span>
+                  </button>
+                  <button
+                    onClick={() => setEditingLoc(true)}
+                    className="w-full border border-zinc-200 hover:border-zinc-900 text-zinc-700 hover:text-zinc-900 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition bg-white shadow-sm"
+                  >
+                    <Edit2 className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>Manually Calibrate Pins</span>
+                  </button>
+                </div>
               )}
 
               <div className="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-200/60 text-xs text-indigo-950 space-y-1">
