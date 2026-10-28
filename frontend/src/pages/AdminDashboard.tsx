@@ -13,14 +13,21 @@ import {
   Filter,
   Eye,
   Info,
-  CheckCircle,
+  CheckCircle2,
   TrendingUp,
   Map,
   Users,
   Coins,
   Inbox,
   Package,
-  Calculator
+  Calculator,
+  X,
+  Mail,
+  Clock,
+  ArrowRight,
+  ShieldCheck,
+  Layers,
+  MapPin
 } from 'lucide-react';
 
 interface Zone {
@@ -102,6 +109,7 @@ export default function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterZone, setFilterZone] = useState('');
   const [filterAgent, setFilterAgent] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Selected entities for details/modals
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
@@ -216,7 +224,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Create Zone handler
   const handleCreateZone = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await fetch('/api/admin/zones', {
@@ -227,7 +234,7 @@ export default function AdminDashboard() {
     if (res.ok) {
       setNewZoneName('');
       setNewZoneDesc('');
-      showSuccess('Zone created successfully!');
+      showSuccess('Zone registered successfully!');
       fetchZones();
     } else {
       const d = await res.json();
@@ -235,7 +242,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Create Area handler
   const handleCreateArea = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await fetch('/api/admin/areas', {
@@ -246,7 +252,7 @@ export default function AdminDashboard() {
     if (res.ok) {
       setNewAreaPostal('');
       setNewAreaName('');
-      showSuccess('Area linked successfully!');
+      showSuccess('Postal hub mapped to zone!');
       fetchAreas();
     } else {
       const d = await res.json();
@@ -254,7 +260,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Create Rate Card handler
   const handleCreateRateCard = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await fetch('/api/admin/ratecards', {
@@ -270,7 +275,7 @@ export default function AdminDashboard() {
       }),
     });
     if (res.ok) {
-      showSuccess('Rate card configuration created!');
+      showSuccess('Rate card pricing matrix updated!');
       fetchRateCards();
     } else {
       const d = await res.json();
@@ -278,11 +283,10 @@ export default function AdminDashboard() {
     }
   };
 
-  // Delete handlers
   const handleDeleteZone = async (id: string) => {
     if (confirm('Delete this zone? This deletes all mapped areas and rate cards!')) {
       await fetch(`/api/admin/zones/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
-      showSuccess('Zone deleted successfully.');
+      showSuccess('Zone deleted.');
       fetchZones();
       fetchAreas();
       fetchRateCards();
@@ -291,7 +295,7 @@ export default function AdminDashboard() {
 
   const handleDeleteArea = async (id: string) => {
     await fetch(`/api/admin/areas/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
-    showSuccess('Area link deleted.');
+    showSuccess('Postal hub removed.');
     fetchAreas();
   };
 
@@ -301,13 +305,12 @@ export default function AdminDashboard() {
     fetchRateCards();
   };
 
-  // Assign agent trigger
   const handleAssignAgent = async (auto: boolean) => {
     if (!selectedOrder) return;
     const body: any = {};
     if (auto) body.auto = true;
     else {
-      if (!assignAgentId) return showError('Please select a specific agent to assign.');
+      if (!assignAgentId) return showError('Please choose a specific agent to assign.');
       body.agentId = assignAgentId;
     }
 
@@ -318,7 +321,7 @@ export default function AdminDashboard() {
     });
     const d = await res.json();
     if (res.ok) {
-      showSuccess(d.message || 'Agent assigned successfully!');
+      showSuccess(d.message || 'Courier assigned successfully!');
     } else {
       showError(d.error || 'Failed to assign agent.');
     }
@@ -326,7 +329,6 @@ export default function AdminDashboard() {
     fetchOrders();
   };
 
-  // Override order status
   const handleOverrideStatus = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedOrder || !overrideStatus) return;
@@ -338,7 +340,7 @@ export default function AdminDashboard() {
     });
 
     if (res.ok) {
-      showSuccess('Status overridden and customer notified.');
+      showSuccess('Status overridden and customer/agent alerted.');
       fetchOrderDetails(selectedOrder.id);
       fetchOrders();
     } else {
@@ -346,7 +348,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Admin Rate Preview
   const handleAdminPreviewPrice = async () => {
     if (!bookPickupAreaId || !bookDropAreaId) return;
     setBookPreviewError('');
@@ -383,7 +384,6 @@ export default function AdminDashboard() {
     }
   }, [bookPickupAreaId, bookDropAreaId, bookLength, bookWidth, bookHeight, bookActualWeight, bookOrderType, bookPaymentType]);
 
-  // Admin places order on behalf of customer
   const handleAdminPlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bookPreview) return;
@@ -414,13 +414,12 @@ export default function AdminDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Booking failed.');
 
-      // Reset
       setBookCustomerEmail('');
       setBookPickupAddress('');
       setBookDropAddress('');
       setBookPreview(null);
       
-      showSuccess(`Order placed successfully on behalf of ${bookCustomerEmail}!`);
+      showSuccess(`Consignment created on behalf of ${bookCustomerEmail}!`);
       fetchOrders();
       setActiveTab('orders');
     } catch (err: any) {
@@ -430,7 +429,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Initialize form defaults once zones are fetched
   useEffect(() => {
     if (zones.length > 0) {
       if (!newAreaZoneId) setNewAreaZoneId(zones[0].id);
@@ -442,161 +440,232 @@ export default function AdminDashboard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return <span className="px-2.5 py-0.5 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Pending</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 animate-pulse"></span>
+            Pending
+          </span>
+        );
       case 'ASSIGNED':
-        return <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Assigned</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-500 mr-1.5"></span>
+            Assigned
+          </span>
+        );
       case 'PICKED_UP':
-        return <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Picked Up</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-1.5"></span>
+            Picked Up
+          </span>
+        );
       case 'IN_TRANSIT':
-        return <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-full text-[10px] font-bold uppercase tracking-wider">In Transit</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mr-1.5 animate-pulse"></span>
+            In Transit
+          </span>
+        );
       case 'OUT_FOR_DELIVERY':
-        return <span className="px-2.5 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Out for Delivery</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mr-1.5 animate-pulse"></span>
+            Out for Delivery
+          </span>
+        );
       case 'DELIVERED':
-        return <span className="px-2.5 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Delivered</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+            Delivered
+          </span>
+        );
       case 'FAILED':
-        return <span className="px-2.5 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Failed</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5"></span>
+            Failed
+          </span>
+        );
       default:
-        return <span className="px-2.5 py-0.5 bg-gray-50 text-gray-700 border border-gray-200 rounded-full text-[10px] font-bold uppercase tracking-wider">{status}</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 text-zinc-700 border border-zinc-200">
+            {status}
+          </span>
+        );
     }
   };
 
   const totalInvoice = orders.reduce((sum, o) => sum + o.totalCharge, 0);
   const activeAgents = agents.filter((a) => a.isAvailable).length;
 
+  const filteredOrders = orders.filter((o) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      o.id.toLowerCase().includes(q) ||
+      o.customer.name.toLowerCase().includes(q) ||
+      o.pickupArea.name.toLowerCase().includes(q) ||
+      o.dropArea.name.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="space-y-6">
-      
-      {/* 1. ADMIN KPI METRICS DASHBOARD */}
+      {/* 1. ADMIN KPI METRICS BENTO */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+        <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm card-hover flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Invoice Volume</span>
-            <h3 className="text-2xl font-black text-gray-900">₹{totalInvoice.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</h3>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Total Billed Volume</span>
+            <h3 className="text-2xl font-black text-zinc-900 tracking-tight">
+              ₹{totalInvoice.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+            </h3>
+            <span className="text-[10px] text-zinc-500 font-medium">Aggregated fleet revenue</span>
           </div>
-          <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded-lg">
-            <Coins className="h-5 w-5" />
+          <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center text-indigo-600">
+            <Coins className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+        <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm card-hover flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Shipments</span>
-            <h3 className="text-2xl font-black text-gray-900">{orders.length}</h3>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">All Shipments</span>
+            <h3 className="text-2xl font-black text-zinc-900 tracking-tight">{orders.length}</h3>
+            <span className="text-[10px] text-sky-600 font-medium">Live pipeline ledger</span>
           </div>
-          <div className="bg-blue-50 text-blue-600 p-2.5 rounded-lg">
-            <Inbox className="h-5 w-5" />
+          <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100/80 flex items-center justify-center text-sky-600">
+            <Inbox className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+        <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm card-hover flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">On-Duty Couriers</span>
-            <h3 className="text-2xl font-black text-gray-900">{activeAgents} / {agents.length}</h3>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Available Couriers</span>
+            <h3 className="text-2xl font-black text-zinc-900 tracking-tight">
+              {activeAgents} <span className="text-sm font-normal text-zinc-400">/ {agents.length}</span>
+            </h3>
+            <span className="text-[10px] text-emerald-600 font-medium">Ready for nearest dispatch</span>
           </div>
-          <div className="bg-green-50 text-green-600 p-2.5 rounded-lg">
-            <Users className="h-5 w-5" />
+          <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-emerald-600">
+            <Users className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+        <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm card-hover flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Operating Zones</span>
-            <h3 className="text-2xl font-black text-gray-900">{zones.length}</h3>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Hub Sectors</span>
+            <h3 className="text-2xl font-black text-zinc-900 tracking-tight">{zones.length}</h3>
+            <span className="text-[10px] text-amber-600 font-medium">{areas.length} mapped postal hubs</span>
           </div>
-          <div className="bg-yellow-50 text-yellow-600 p-2.5 rounded-lg">
-            <Map className="h-5 w-5" />
+          <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100/80 flex items-center justify-center text-amber-600">
+            <Map className="w-5 h-5" />
           </div>
         </div>
-
       </div>
 
-      {/* Dashboard Top bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-xl border border-gray-200 shadow-sm gap-4">
+      {/* 2. ADMIN HEADER & SUB-NAVIGATION */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-5 rounded-2xl border border-zinc-200/80 shadow-sm gap-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Admin Control Panel</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Control pricing formulas, zone regions, and agent delivery queues.</p>
+          <div className="flex items-center space-x-2">
+            <h1 className="text-xl font-bold tracking-tight text-zinc-900">Operations Control Center</h1>
+            <span className="text-[10px] font-mono bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded border border-zinc-200 font-bold">
+              SUPERADMIN
+            </span>
+          </div>
+          <p className="text-xs text-zinc-500 mt-1 font-medium">
+            Supervise courier allocations, override shipment stages, and manage distance rate rules.
+          </p>
         </div>
-        
-        {/* Navigation Tabs */}
-        <div className="flex bg-gray-100 p-1 rounded-lg border text-sm font-semibold">
+
+        {/* Tab Selection */}
+        <div className="flex flex-wrap bg-zinc-100/80 p-1 rounded-xl border border-zinc-200/60 text-xs font-semibold gap-0.5">
           <button
             onClick={() => setActiveTab('orders')}
-            className={`px-4 py-1.5 rounded-md transition ${
-              activeTab === 'orders' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              activeTab === 'orders' ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            Orders
+            All Shipments
           </button>
           <button
             onClick={() => setActiveTab('book')}
-            className={`px-4 py-1.5 rounded-md transition ${
-              activeTab === 'book' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              activeTab === 'book' ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            Book Shipment
+            Create Order
           </button>
           <button
             onClick={() => setActiveTab('zones')}
-            className={`px-4 py-1.5 rounded-md transition ${
-              activeTab === 'zones' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              activeTab === 'zones' ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            Zones & Areas
+            Zones & Hubs
           </button>
           <button
             onClick={() => setActiveTab('rates')}
-            className={`px-4 py-1.5 rounded-md transition ${
-              activeTab === 'rates' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              activeTab === 'rates' ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            Rate Cards
+            Rate Card Engine
           </button>
           <button
             onClick={() => setActiveTab('agents')}
-            className={`px-4 py-1.5 rounded-md transition ${
-              activeTab === 'agents' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              activeTab === 'agents' ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60' : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            Agents
+            Courier Fleet
           </button>
         </div>
       </div>
 
-      {/* SUCCESS / ERROR INLINE ALERTS */}
+      {/* Notifications */}
       {successMsg && (
-        <div className="bg-green-50 text-green-800 px-4 py-3 rounded-lg border border-green-200 text-sm font-semibold flex items-center transition shadow-sm animate-fadeIn">
-          <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+        <div className="bg-emerald-50/80 text-emerald-800 px-4 py-3 rounded-xl border border-emerald-200 text-xs font-semibold flex items-center animate-fadeIn shadow-sm">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 mr-2 flex-shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
       {errorMsg && (
-        <div className="bg-red-50 text-red-800 px-4 py-3 rounded-lg border border-red-200 text-sm font-semibold flex items-center transition shadow-sm animate-fadeIn">
-          <AlertTriangle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
+        <div className="bg-rose-50/80 text-rose-800 px-4 py-3 rounded-xl border border-rose-200 text-xs font-semibold flex items-center animate-fadeIn shadow-sm">
+          <AlertTriangle className="h-4 w-4 text-rose-600 mr-2 flex-shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {/* ==================================================== */}
-      {/* ORDERS TAB */}
+      {/* 3. ALL SHIPMENTS TAB */}
       {/* ==================================================== */}
       {activeTab === 'orders' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Order Listing with filters */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-3 gap-3">
-              <div className="flex items-center space-x-2">
-                <Truck className="h-5 w-5 text-indigo-600" />
-                <h2 className="text-lg font-bold text-gray-800 font-sans">All Shipments ({orders.length})</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+          {/* Main Table Column */}
+          <div className={`${selectedOrder ? 'lg:col-span-2' : 'lg:col-span-3'} bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-4`}>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-3 border-b border-zinc-100 gap-3">
+              <div className="flex items-center space-x-2.5">
+                <Truck className="w-5 h-5 text-indigo-600" />
+                <h2 className="text-base font-bold text-zinc-900">Shipment Governance ({orders.length})</h2>
               </div>
               
-              <div className="flex flex-wrap gap-2">
-                {/* Status filter */}
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <div className="relative flex-1 sm:flex-initial">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-zinc-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search orders..."
+                    className="pl-8 pr-3 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg w-full sm:w-44 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  />
+                </div>
+
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="px-2 py-1 border rounded text-xs bg-white text-gray-700 font-semibold focus:outline-none"
+                  className="px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs bg-zinc-50 text-zinc-700 font-semibold focus:outline-none"
                 >
                   <option value="">All Statuses</option>
                   <option value="PENDING">Pending</option>
@@ -608,11 +677,10 @@ export default function AdminDashboard() {
                   <option value="FAILED">Failed</option>
                 </select>
 
-                {/* Zone filter */}
                 <select
                   value={filterZone}
                   onChange={(e) => setFilterZone(e.target.value)}
-                  className="px-2 py-1 border rounded text-xs bg-white text-gray-700 font-semibold focus:outline-none"
+                  className="px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs bg-zinc-50 text-zinc-700 font-semibold focus:outline-none"
                 >
                   <option value="">All Zones</option>
                   {zones.map((z) => (
@@ -620,59 +688,78 @@ export default function AdminDashboard() {
                   ))}
                 </select>
 
-                {/* Agent filter */}
                 <select
                   value={filterAgent}
                   onChange={(e) => setFilterAgent(e.target.value)}
-                  className="px-2 py-1 border rounded text-xs bg-white text-gray-700 font-semibold focus:outline-none"
+                  className="px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs bg-zinc-50 text-zinc-700 font-semibold focus:outline-none"
                 >
-                  <option value="">All Agents</option>
+                  <option value="">All Couriers</option>
                   {agents.map((a) => (
                     <option key={a.id} value={a.id}>{a.user.name}</option>
                   ))}
                 </select>
+
+                <button
+                  onClick={fetchOrders}
+                  className="p-2 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 border border-zinc-200/80 transition"
+                  title="Refresh Orders"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="min-w-full text-xs text-left text-gray-600">
-                <thead className="bg-gray-50 text-gray-700 uppercase font-semibold">
+              <table className="min-w-full text-xs text-left">
+                <thead className="bg-zinc-50/75 text-zinc-500 font-bold uppercase text-[10px] tracking-wider border-y border-zinc-100">
                   <tr>
-                    <th className="py-2 px-3">Order ID</th>
-                    <th className="py-2 px-3">Customer</th>
-                    <th className="py-2 px-3">Route</th>
-                    <th className="py-2 px-3">Price</th>
-                    <th className="py-2 px-3">Status</th>
-                    <th className="py-2 px-3">Agent</th>
-                    <th className="py-2 px-3 text-right">Action</th>
+                    <th className="py-3 px-3">Order ID</th>
+                    <th className="py-3 px-3">Customer</th>
+                    <th className="py-3 px-3">Routing</th>
+                    <th className="py-3 px-3">Charge</th>
+                    <th className="py-3 px-3">Status</th>
+                    <th className="py-3 px-3">Assigned Courier</th>
+                    <th className="py-3 px-3 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {orders.length === 0 ? (
+                <tbody className="divide-y divide-zinc-100 text-zinc-700 font-medium">
+                  {filteredOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="text-center py-6 text-gray-400">
-                        No orders matching search filter criteria.
+                      <td colSpan={7} className="text-center py-12 text-zinc-400">
+                        <Inbox className="w-10 h-10 text-zinc-300 mx-auto mb-2" />
+                        <p className="font-bold text-zinc-600 text-xs">No matching consignments found</p>
                       </td>
                     </tr>
                   ) : (
-                    orders.map((o) => (
-                      <tr key={o.id} className="hover:bg-gray-50/50">
-                        <td className="py-3 px-3 font-mono font-bold text-gray-900">{o.id.split('-')[0]}</td>
-                        <td className="py-3 px-3">{o.customer.name}</td>
-                        <td className="py-3 px-3">
-                          {o.pickupArea.name} → {o.dropArea.name}
+                    filteredOrders.map((o) => (
+                      <tr key={o.id} className="hover:bg-zinc-50/70 transition-colors">
+                        <td className="py-3 px-3 font-mono font-bold text-zinc-900">
+                          #{o.id.split('-')[0]}
                         </td>
-                        <td className="py-3 px-3 font-semibold text-gray-900">₹{o.totalCharge.toFixed(2)}</td>
+                        <td className="py-3 px-3 font-semibold text-zinc-900">{o.customer.name}</td>
+                        <td className="py-3 px-3">
+                          <span className="text-zinc-800 font-medium">{o.pickupArea.name}</span>
+                          <span className="text-zinc-400 mx-1">→</span>
+                          <span className="text-zinc-800 font-medium">{o.dropArea.name}</span>
+                        </td>
+                        <td className="py-3 px-3 font-bold font-mono text-zinc-900">
+                          ₹{o.totalCharge.toFixed(2)}
+                        </td>
                         <td className="py-3 px-3">{getStatusBadge(o.status)}</td>
-                        <td className="py-3 px-3 text-gray-500 font-medium">
-                          {o.agent ? o.agent.user.name : <em className="text-gray-400">Unassigned</em>}
+                        <td className="py-3 px-3">
+                          {o.agent ? (
+                            <span className="font-bold text-zinc-900">{o.agent.user.name}</span>
+                          ) : (
+                            <span className="text-zinc-400 font-normal italic">Unassigned</span>
+                          )}
                         </td>
                         <td className="py-3 px-3 text-right">
                           <button
                             onClick={() => fetchOrderDetails(o.id)}
-                            className="bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 px-2 py-1 rounded font-bold text-[10px] transition"
+                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-zinc-700 bg-zinc-100 hover:bg-zinc-900 hover:text-white transition"
                           >
-                            Manage
+                            <span>Manage</span>
+                            <ArrowRight className="w-3 h-3" />
                           </button>
                         </td>
                       </tr>
@@ -683,279 +770,294 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Order Audit, Overrides & Agent assignment details */}
-          <div className="lg:col-span-1">
-            {selectedOrder ? (
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-6 animate-fadeIn">
-                <div>
-                  <h3 className="text-base font-extrabold text-gray-800 border-b pb-2 mb-3 flex justify-between items-center">
-                    <span>Manage Order #{selectedOrder.id.split('-')[0]}</span>
-                    <button onClick={() => setSelectedOrder(null)} className="text-xs text-gray-400 hover:text-gray-600 font-bold">Close</button>
-                  </h3>
-                  
-                  <div className="space-y-1.5 text-xs text-gray-700">
-                    <p><strong>Customer:</strong> {selectedOrder.customer.name} ({selectedOrder.customer.email})</p>
-                    <p><strong>Route:</strong> {selectedOrder.pickupAddress} → {selectedOrder.dropAddress}</p>
-                    <p><strong>Actual Wt:</strong> {selectedOrder.actualWeight} kg | <strong>Volumetric:</strong> {selectedOrder.volumetricWeight.toFixed(2)} kg</p>
-                    <p><strong>Type:</strong> {selectedOrder.orderType} ({selectedOrder.paymentType})</p>
-                    <p><strong>Price Breakdown:</strong> Delivery: ₹{selectedOrder.deliveryCharge.toFixed(2)} + COD Surcharge: ₹{selectedOrder.codSurcharge.toFixed(2)} = <strong>₹{selectedOrder.totalCharge.toFixed(2)}</strong></p>
-                    <p><strong>Reschedule Attempts:</strong> {selectedOrder.rescheduleAttempts} {selectedOrder.rescheduleDate && `(Rescheduled for ${new Date(selectedOrder.rescheduleDate).toLocaleDateString()})`}</p>
-                  </div>
+          {/* Right Column: Order Audit, Overrides & Reassignment */}
+          {selectedOrder && (
+            <div className="lg:col-span-1 bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-6 animate-fadeIn self-start">
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs font-bold text-zinc-900 font-mono">
+                    #{selectedOrder.id.split('-')[0]}
+                  </span>
+                  {getStatusBadge(selectedOrder.status)}
                 </div>
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
-                {/* 1. AGENT ASSIGNMENT ACTIONS */}
-                <div className="bg-gray-50 border p-4 rounded-xl space-y-3">
-                  <h4 className="text-xs font-bold text-gray-700 uppercase">Agent Assignment (Nearest / Manual)</h4>
-                  
-                  {/* Dropdown list of available agents */}
-                  <div className="flex space-x-2">
-                    <select
-                      value={assignAgentId}
-                      onChange={(e) => setAssignAgentId(e.target.value)}
-                      className="flex-grow px-2 py-1 text-xs border rounded bg-white focus:outline-none"
-                    >
-                      <option value="">-- Choose Agent --</option>
-                      {agents.map((ag) => (
-                        <option key={ag.id} value={ag.id}>
-                          {ag.user.name} ({ag.isAvailable ? 'Available' : 'Busy'} - {ag.currentZone?.name || 'No Zone'})
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={() => handleAssignAgent(false)}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1 rounded"
-                    >
-                      Assign
-                    </button>
-                  </div>
+              {/* Waybill summary */}
+              <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-2 text-xs">
+                <p>
+                  <strong className="text-zinc-900">Customer:</strong> {selectedOrder.customer.name} ({selectedOrder.customer.email})
+                </p>
+                <p>
+                  <strong className="text-zinc-900">Route:</strong> {selectedOrder.pickupAddress} → {selectedOrder.dropAddress}
+                </p>
+                <p>
+                  <strong className="text-zinc-900">Volumetric:</strong> {selectedOrder.volumetricWeight.toFixed(2)} kg (Actual: {selectedOrder.actualWeight} kg)
+                </p>
+                <p>
+                  <strong className="text-zinc-900">Invoice:</strong> Delivery ₹{selectedOrder.deliveryCharge.toFixed(2)} + COD ₹{selectedOrder.codSurcharge.toFixed(2)} = <span className="font-bold text-zinc-900 font-mono">₹{selectedOrder.totalCharge.toFixed(2)}</span>
+                </p>
+              </div>
 
-                  <div className="border-t pt-2.5">
-                    <button
-                      onClick={() => handleAssignAgent(true)}
-                      className="w-full border border-indigo-600 hover:bg-indigo-50 text-indigo-700 text-xs font-bold py-1.5 rounded transition flex items-center justify-center space-x-1"
-                    >
-                      <Compass className="h-3.5 w-3.5" />
-                      <span>Trigger Auto-Assignment</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* 2. ADMIN STATUS OVERRIDE */}
-                <form onSubmit={handleOverrideStatus} className="bg-gray-50 border p-4 rounded-xl space-y-3">
-                  <h4 className="text-xs font-bold text-gray-700 uppercase">Force Override Status</h4>
-                  <div className="space-y-2">
-                    <select
-                      value={overrideStatus}
-                      onChange={(e) => setOverrideStatus(e.target.value)}
-                      className="w-full px-2 py-1 text-xs border rounded bg-white focus:outline-none"
-                    >
-                      <option value="PENDING">Pending</option>
-                      <option value="ASSIGNED">Assigned</option>
-                      <option value="PICKED_UP">Picked Up</option>
-                      <option value="IN_TRANSIT">In Transit</option>
-                      <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-                      <option value="DELIVERED">Delivered</option>
-                      <option value="FAILED">Failed</option>
-                    </select>
-                    <input
-                      type="text"
-                      placeholder="Notes for status override log..."
-                      value={overrideNotes}
-                      onChange={(e) => setOverrideNotes(e.target.value)}
-                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-indigo-600"
-                    />
-                    <button
-                      type="submit"
-                      className="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1.5 rounded transition"
-                    >
-                      Override & Notify Customer
-                    </button>
-                  </div>
-                </form>
-
-                {/* 3. IMMUTABLE TIMELINE AUDIT HISTORY */}
-                <div className="border-t pt-4">
-                  <h4 className="text-xs font-bold text-gray-700 uppercase mb-2">Immutable History Logs</h4>
-                  <div className="relative border-l pl-3 ml-1 space-y-3 max-h-48 overflow-y-auto text-[11px]">
-                    {selectedOrder.timelines?.map((tl: any) => (
-                      <div key={tl.id}>
-                        <div className="flex justify-between font-semibold text-gray-900">
-                          <span>{tl.status}</span>
-                          <span className="text-gray-400">{new Date(tl.timestamp).toLocaleTimeString()}</span>
-                        </div>
-                        <p className="text-gray-500 italic">{tl.notes}</p>
-                        <p className="text-[9px] text-gray-400">Actor: {tl.actor ? tl.actor.name : 'SYSTEM'} ({tl.actorRole})</p>
-                      </div>
+              {/* Courier Re-assignment Block */}
+              <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-3">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                  Courier Assignment & Dispatch
+                </span>
+                <div className="flex space-x-2">
+                  <select
+                    value={assignAgentId}
+                    onChange={(e) => setAssignAgentId(e.target.value)}
+                    className="flex-1 px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  >
+                    <option value="">-- Choose Agent --</option>
+                    {agents.map((ag) => (
+                      <option key={ag.id} value={ag.id}>
+                        {ag.user.name} ({ag.isAvailable ? 'Available' : 'Busy'} - {ag.currentZone?.name || 'No Zone'})
+                      </option>
                     ))}
-                  </div>
+                  </select>
+                  <button
+                    onClick={() => handleAssignAgent(false)}
+                    className="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition"
+                  >
+                    Assign
+                  </button>
                 </div>
+                <button
+                  onClick={() => handleAssignAgent(true)}
+                  className="w-full border border-zinc-300 hover:border-zinc-900 text-zinc-800 text-xs font-bold py-1.5 rounded-lg transition flex items-center justify-center space-x-1.5 bg-white shadow-sm"
+                >
+                  <Compass className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Execute Haversine Auto-Dispatch</span>
+                </button>
+              </div>
 
-                {/* 4. NOTIFICATION AUDIT LOGS */}
-                <div className="border-t pt-4">
-                  <h4 className="text-xs font-bold text-gray-700 uppercase mb-2">Notification dispatch log</h4>
-                  <div className="space-y-2 max-h-48 overflow-y-auto text-[10px] text-gray-500">
-                    {selectedOrder.notifications?.length === 0 ? (
-                      <p className="text-gray-400">No notifications sent.</p>
-                    ) : (
-                      selectedOrder.notifications?.map((notif: any) => (
-                        <div key={notif.id} className="p-2 bg-gray-50 rounded border">
-                          <div className="flex justify-between font-bold text-gray-700">
-                            <span>{notif.type} to {notif.recipientEmail}</span>
-                            <span className="text-green-600 uppercase font-semibold">{notif.status}</span>
-                          </div>
-                          <p className="font-medium text-gray-800 mt-0.5">Subj: {notif.subject}</p>
-                          <p className="whitespace-pre-line leading-relaxed text-gray-400 mt-1">{notif.body}</p>
+              {/* Status Override */}
+              <form onSubmit={handleOverrideStatus} className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-3">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">
+                  Administrative Status Override
+                </span>
+                <div className="space-y-2">
+                  <select
+                    value={overrideStatus}
+                    onChange={(e) => setOverrideStatus(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  >
+                    <option value="PENDING">Pending</option>
+                    <option value="ASSIGNED">Assigned</option>
+                    <option value="PICKED_UP">Picked Up</option>
+                    <option value="IN_TRANSIT">In Transit</option>
+                    <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+                    <option value="DELIVERED">Delivered</option>
+                    <option value="FAILED">Failed</option>
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Log audit reason..."
+                    value={overrideNotes}
+                    onChange={(e) => setOverrideNotes(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  />
+                  <button
+                    type="submit"
+                    className="w-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-2 rounded-lg transition shadow-sm"
+                  >
+                    Override Status & Notify Parties
+                  </button>
+                </div>
+              </form>
+
+              {/* Immutable Timeline */}
+              <div className="pt-2 border-t border-zinc-100">
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-3">
+                  Lifecycle Audit History
+                </span>
+                <div className="relative pl-4 space-y-3 border-l-2 border-zinc-100 ml-2 max-h-48 overflow-y-auto">
+                  {selectedOrder.timelines?.map((tl: any) => (
+                    <div key={tl.id} className="relative group text-xs">
+                      <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-zinc-900 border-2 border-white ring-2 ring-zinc-100"></div>
+                      <div className="flex justify-between font-bold text-zinc-900 text-[11px]">
+                        <span>{tl.status}</span>
+                        <span className="text-[10px] font-mono text-zinc-400">{new Date(tl.timestamp).toLocaleTimeString()}</span>
+                      </div>
+                      <p className="text-zinc-500 text-[11px] mt-0.5">{tl.notes}</p>
+                      <span className="text-[9px] text-zinc-400 block font-mono">Actor: {tl.actor?.name || 'SYSTEM'} ({tl.actorRole})</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Notification Dispatch Ledger */}
+              <div className="pt-2 border-t border-zinc-100">
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block mb-2">
+                  Live SMTP Notification Outbox
+                </span>
+                <div className="space-y-2 max-h-48 overflow-y-auto text-[11px]">
+                  {selectedOrder.notifications?.length === 0 ? (
+                    <p className="text-zinc-400 text-xs">No notifications recorded.</p>
+                  ) : (
+                    selectedOrder.notifications?.map((notif: any) => (
+                      <div key={notif.id} className="p-2.5 bg-zinc-50 rounded-xl border border-zinc-200/70 space-y-1">
+                        <div className="flex justify-between font-bold text-zinc-800 text-[10px]">
+                          <span>{notif.type} → {notif.recipientEmail}</span>
+                          <span className="text-emerald-600 font-mono uppercase">{notif.status}</span>
                         </div>
-                      ))
-                    )}
-                  </div>
+                        <p className="font-semibold text-zinc-900 text-[11px] truncate">{notif.subject}</p>
+                        <p className="whitespace-pre-line text-zinc-500 text-[10px] line-clamp-2">{notif.body}</p>
+                      </div>
+                    ))
+                  )}
                 </div>
-
               </div>
-            ) : (
-              <div className="bg-white p-6 rounded-xl border border-gray-200 text-center py-12 text-gray-400 shadow-sm text-sm">
-                <Info className="h-8 w-8 mx-auto text-gray-300 mb-2" />
-                <span>Select an order from the list to audit its status timeline, check notification dispatch history, manually assign an agent, or trigger status overrides.</span>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* ==================================================== */}
-      {/* BOOK ON BEHALF TAB */}
+      {/* 4. CREATE ON BEHALF TAB */}
       {/* ==================================================== */}
       {activeTab === 'book' && (
-        <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-200 animate-fadeIn">
-          <div className="flex items-center space-x-2.5 mb-6 border-b border-gray-100 pb-3">
-            <Package className="h-6 w-6 text-indigo-600" />
-            <h2 className="text-xl font-bold text-gray-800">Book Shipment on Behalf of Customer</h2>
+        <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 sm:p-8 animate-fadeIn">
+          <div className="flex items-center space-x-3 pb-5 mb-6 border-b border-zinc-100">
+            <div className="w-9 h-9 rounded-xl bg-zinc-900 text-white flex items-center justify-center">
+              <Package className="w-4 h-4 text-indigo-400" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-zinc-900 tracking-tight">Manual Enterprise Consignment Booking</h2>
+              <p className="text-xs text-zinc-400">Place an order on behalf of an enterprise or retail client account.</p>
+            </div>
           </div>
 
-          <form onSubmit={handleAdminPlaceOrder} className="space-y-5">
-            {/* Customer Email Input */}
-            <div className="p-4 bg-indigo-50/40 border border-indigo-100 rounded-xl space-y-2">
-              <label className="block text-xs font-bold text-indigo-900 uppercase tracking-wider">Customer Email Address</label>
-              <input
-                type="email"
-                required
-                value={bookCustomerEmail}
-                onChange={(e) => setBookCustomerEmail(e.target.value)}
-                placeholder="E.g., client@retailgroup.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:border-transparent transition"
-              />
-              <p className="text-[10px] text-gray-400">
-                If the email is not registered, a new Customer profile will be automatically generated and linked.
+          <form onSubmit={handleAdminPlaceOrder} className="space-y-6">
+            <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-1.5">
+              <label className="block text-[11px] font-bold text-zinc-700 uppercase tracking-wider">
+                Client Account Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-2.5 w-4 h-4 text-zinc-400" />
+                <input
+                  type="email"
+                  required
+                  value={bookCustomerEmail}
+                  onChange={(e) => setBookCustomerEmail(e.target.value)}
+                  placeholder="client@company.com"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                />
+              </div>
+              <p className="text-[10px] text-zinc-400">
+                If the email is not yet registered, an account will be automatically provisioned for them.
               </p>
             </div>
 
+            {/* Routing */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Pickup details */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">1. Pickup Information</h3>
+              <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-3">
+                <label className="text-xs font-bold text-zinc-800">Origin / Pickup</label>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Pickup Address</label>
+                  <label className="block text-[10px] text-zinc-500 font-medium mb-1">Postal Hub</label>
+                  <select
+                    value={bookPickupAreaId}
+                    onChange={(e) => setBookPickupAreaId(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  >
+                    {areas.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.postalCode} — {a.name} ({a.zone.name})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] text-zinc-500 font-medium mb-1">Pickup Address</label>
                   <input
                     type="text"
                     required
                     value={bookPickupAddress}
                     onChange={(e) => setBookPickupAddress(e.target.value)}
-                    placeholder="E.g., 123 Alpha Road, Apartment 4B"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:border-transparent transition"
+                    placeholder="Full street address..."
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   />
                 </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-3">
+                <label className="text-xs font-bold text-zinc-800">Destination / Drop</label>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Pickup Area (Postal Code)</label>
+                  <label className="block text-[10px] text-zinc-500 font-medium mb-1">Postal Hub</label>
                   <select
-                    value={bookPickupAreaId}
-                    onChange={(e) => setBookPickupAreaId(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none"
+                    value={bookDropAreaId}
+                    onChange={(e) => setBookDropAreaId(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   >
                     {areas.map((a) => (
                       <option key={a.id} value={a.id}>
-                        {a.postalCode} - {a.name} ({a.zone.name})
+                        {a.postalCode} — {a.name} ({a.zone.name})
                       </option>
                     ))}
                   </select>
                 </div>
-              </div>
-
-              {/* Drop details */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">2. Drop Information</h3>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Drop Address</label>
+                  <label className="block text-[10px] text-zinc-500 font-medium mb-1">Drop Address</label>
                   <input
                     type="text"
                     required
                     value={bookDropAddress}
                     onChange={(e) => setBookDropAddress(e.target.value)}
-                    placeholder="E.g., 456 Omega Street, Office 12"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:border-transparent transition"
+                    placeholder="Full street address..."
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Drop Area (Postal Code)</label>
-                  <select
-                    value={bookDropAreaId}
-                    onChange={(e) => setBookDropAreaId(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none"
-                  >
-                    {areas.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.postalCode} - {a.name} ({a.zone.name})
-                      </option>
-                    ))}
-                  </select>
                 </div>
               </div>
             </div>
 
-            <hr className="border-gray-100" />
-
-            {/* Package stats */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">3. Package Statistics</h3>
-              
+            {/* Metrics */}
+            <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-4">
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Length (cm)</label>
+                  <label className="block text-[11px] font-bold text-zinc-700 mb-1">Length (cm)</label>
                   <input
                     type="number"
                     min="1"
                     required
                     value={bookLength}
                     onChange={(e) => setBookLength(parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Width (cm)</label>
+                  <label className="block text-[11px] font-bold text-zinc-700 mb-1">Width (cm)</label>
                   <input
                     type="number"
                     min="1"
                     required
                     value={bookWidth}
                     onChange={(e) => setBookWidth(parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Height (cm)</label>
+                  <label className="block text-[11px] font-bold text-zinc-700 mb-1">Height (cm)</label>
                   <input
                     type="number"
                     min="1"
                     required
                     value={bookHeight}
                     onChange={(e) => setBookHeight(parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Weight (kg)</label>
+                  <label className="block text-[11px] font-bold text-zinc-700 mb-1">Mass (kg)</label>
                   <input
                     type="number"
                     step="0.1"
@@ -963,179 +1065,162 @@ export default function AdminDashboard() {
                     required
                     value={bookActualWeight}
                     onChange={(e) => setBookActualWeight(parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Order Category</label>
+                  <label className="block text-[11px] font-bold text-zinc-700 mb-1">Category</label>
                   <select
                     value={bookOrderType}
                     onChange={(e) => setBookOrderType(e.target.value as 'B2B' | 'B2C')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900 font-medium"
                   >
-                    <option value="B2C">B2C (Retail)</option>
-                    <option value="B2B">B2B (Enterprise)</option>
+                    <option value="B2C">B2C Retail</option>
+                    <option value="B2B">B2B Enterprise</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Payment Method</label>
+                  <label className="block text-[11px] font-bold text-zinc-700 mb-1">Payment Method</label>
                   <select
                     value={bookPaymentType}
                     onChange={(e) => setBookPaymentType(e.target.value as 'PREPAID' | 'COD')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900 font-medium"
                   >
                     <option value="PREPAID">Prepaid</option>
-                    <option value="COD">Cash On Delivery (COD)</option>
+                    <option value="COD">Cash On Delivery</option>
                   </select>
                 </div>
               </div>
             </div>
 
-            {/* LIVE RATE PREVIEW PANEL */}
-            <div className="bg-indigo-50/50 border border-indigo-200 p-5 rounded-xl space-y-3">
-              <div className="flex items-center space-x-1.5 text-indigo-900 font-bold text-sm">
-                <Calculator className="h-5 w-5 text-indigo-600" />
-                <span>Live Calculated Charge Breakdown</span>
+            {/* Price Preview */}
+            <div className="p-4 rounded-xl bg-zinc-900 text-white space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-zinc-400">Rate Discovery:</span>
+                <span className="text-emerald-400 font-mono font-bold text-base">
+                  {bookPreview ? `₹${bookPreview.totalCharge.toFixed(2)}` : 'Awaiting parameters...'}
+                </span>
               </div>
-              {bookPreviewError && <p className="text-red-600 text-xs font-semibold">{bookPreviewError}</p>}
-              {bookPreview ? (
-                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs text-gray-700 border-t border-indigo-200/60 pt-2.5">
-                  <div className="flex justify-between">
-                    <span>Volumetric Weight:</span>
-                    <strong className="text-gray-900">{bookPreview.volumetricWeight.toFixed(2)} kg</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Chargeable Weight:</span>
-                    <strong className="text-gray-900">{bookPreview.chargeableWeight.toFixed(2)} kg</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Route base & rate charge:</span>
-                    <strong className="text-gray-900">₹{bookPreview.deliveryCharge.toFixed(2)}</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>COD Fee:</span>
-                    <strong className="text-gray-900">₹{bookPreview.codSurcharge.toFixed(2)}</strong>
-                  </div>
-                  <div className="flex justify-between col-span-2 text-sm font-bold text-indigo-900 border-t border-indigo-200 pt-2">
-                    <span>Total Billable Cost:</span>
-                    <span>₹{bookPreview.totalCharge.toFixed(2)}</span>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-gray-400 text-xs">Fill out pickup and destination zones to estimate charges.</p>
-              )}
             </div>
 
             <button
               type="submit"
               disabled={bookLoading || !bookPreview || !bookCustomerEmail}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-indigo-100 disabled:opacity-50 transition"
+              className="w-full bg-zinc-900 text-white py-3 rounded-xl text-xs sm:text-sm font-bold hover:bg-zinc-800 disabled:opacity-50 transition shadow-sm"
             >
-              {bookLoading ? 'Processing Booking...' : 'Confirm Shipment Booking'}
+              {bookLoading ? 'Authorizing Dispatch...' : 'Confirm Admin Booking'}
             </button>
           </form>
         </div>
       )}
 
       {/* ==================================================== */}
-      {/* ZONES & AREAS TAB */}
+      {/* 5. ZONES & AREAS TAB */}
       {/* ==================================================== */}
       {activeTab === 'zones' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
-          
-          {/* Zones Config */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-6">
-            <div className="flex items-center justify-between border-b pb-2 mb-2">
-              <h2 className="text-lg font-bold text-gray-800">Operational Zones</h2>
+          {/* Zones */}
+          <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+              <div className="flex items-center space-x-2">
+                <Map className="w-5 h-5 text-indigo-600" />
+                <h2 className="text-base font-bold text-zinc-900">Operating Zones ({zones.length})</h2>
+              </div>
             </div>
 
-            <form onSubmit={handleCreateZone} className="bg-gray-50 p-4 border rounded-xl grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Zone Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="E.g., Zone West"
-                  value={newZoneName}
-                  onChange={(e) => setNewZoneName(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-indigo-600"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Description</label>
-                <input
-                  type="text"
-                  placeholder="Zone details..."
-                  value={newZoneDesc}
-                  onChange={(e) => setNewZoneDesc(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-indigo-600"
-                />
+            <form onSubmit={handleCreateZone} className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Zone Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Zone South"
+                    value={newZoneName}
+                    onChange={(e) => setNewZoneName(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Description</label>
+                  <input
+                    type="text"
+                    placeholder="Zone specifications..."
+                    value={newZoneDesc}
+                    onChange={(e) => setNewZoneDesc(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  />
+                </div>
               </div>
               <button
                 type="submit"
-                className="w-full sm:col-span-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 rounded text-xs transition shadow-sm"
+                className="w-full bg-zinc-900 text-white font-bold py-1.5 rounded-lg text-xs hover:bg-zinc-800 transition"
               >
-                Add Operational Zone
+                Register Operational Zone
               </button>
             </form>
 
             <div className="space-y-2 max-h-[300px] overflow-y-auto">
               {zones.map((z) => (
-                <div key={z.id} className="flex justify-between items-center p-3 border rounded-lg hover:bg-gray-50 text-sm">
+                <div key={z.id} className="flex justify-between items-center p-3 rounded-xl border border-zinc-200/70 hover:bg-zinc-50 transition text-xs">
                   <div>
-                    <h4 className="font-bold text-gray-800">{z.name}</h4>
-                    <p className="text-gray-500 text-xs">{z.description || 'No description'}</p>
-                    <p className="text-[10px] text-gray-400 font-medium mt-0.5">
-                      Areas Linked: {z._count?.areas} | active couriers: {z._count?.agentProfiles}
-                    </p>
+                    <h4 className="font-bold text-zinc-900">{z.name}</h4>
+                    <p className="text-zinc-500 text-[11px]">{z.description || 'No description'}</p>
+                    <span className="text-[10px] text-zinc-400 font-mono mt-0.5 block">
+                      {z._count?.areas || 0} Areas Linked &bull; {z._count?.agentProfiles || 0} Assigned Couriers
+                    </span>
                   </div>
                   <button
                     onClick={() => handleDeleteZone(z.id)}
-                    className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition"
+                    className="p-1.5 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                    title="Delete Zone"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Areas (Postal Codes) Config */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-6">
-            <div className="flex items-center justify-between border-b pb-2 mb-2">
-              <h2 className="text-lg font-bold text-gray-800">Pin Area to Zone Mapping</h2>
+          {/* Postal Areas Mapping */}
+          <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+              <div className="flex items-center space-x-2">
+                <MapPin className="w-5 h-5 text-indigo-600" />
+                <h2 className="text-base font-bold text-zinc-900">Pin Hubs to Zones ({areas.length})</h2>
+              </div>
             </div>
 
-            <form onSubmit={handleCreateArea} className="bg-gray-50 p-4 border rounded-xl space-y-3">
+            <form onSubmit={handleCreateArea} className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Postal Code</label>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Postal Code</label>
                   <input
                     type="text"
                     required
-                    placeholder="E.g., 400050"
+                    placeholder="e.g. 110001"
                     value={newAreaPostal}
                     onChange={(e) => setNewAreaPostal(e.target.value)}
-                    className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Area Name</label>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Hub Name</label>
                   <input
                     type="text"
                     required
-                    placeholder="E.g., Bandra"
+                    placeholder="e.g. Connaught Place"
                     value={newAreaName}
                     onChange={(e) => setNewAreaName(e.target.value)}
-                    className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Link to Zone</label>
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Linked Zone</label>
                   <select
                     value={newAreaZoneId}
                     onChange={(e) => setNewAreaZoneId(e.target.value)}
-                    className="w-full px-2 py-1.5 text-xs border bg-white focus:outline-none"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
                   >
                     {zones.map((z) => (
                       <option key={z.id} value={z.id}>{z.name}</option>
@@ -1145,34 +1230,34 @@ export default function AdminDashboard() {
               </div>
               <button
                 type="submit"
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 rounded text-xs transition shadow-sm"
+                className="w-full bg-zinc-900 text-white font-bold py-1.5 rounded-lg text-xs hover:bg-zinc-800 transition"
               >
-                Map Area to Zone
+                Map Hub to Zone
               </button>
             </form>
 
             <div className="overflow-x-auto max-h-[300px]">
-              <table className="min-w-full text-xs text-left text-gray-600">
-                <thead className="bg-gray-50 text-gray-700 uppercase font-semibold">
+              <table className="min-w-full text-xs text-left">
+                <thead className="bg-zinc-50/75 text-zinc-500 font-bold uppercase text-[10px] tracking-wider border-y border-zinc-100">
                   <tr>
-                    <th className="py-2 px-3">Postal Code</th>
-                    <th className="py-2 px-3">Area Name</th>
-                    <th className="py-2 px-3">Linked Zone</th>
-                    <th className="py-2 px-3 text-right">Delete</th>
+                    <th className="py-2.5 px-3">Postal Code</th>
+                    <th className="py-2.5 px-3">Hub Name</th>
+                    <th className="py-2.5 px-3">Zone</th>
+                    <th className="py-2.5 px-3 text-right">Delete</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-zinc-100 text-zinc-700">
                   {areas.map((a) => (
-                    <tr key={a.id}>
-                      <td className="py-2 px-3 font-mono font-bold">{a.postalCode}</td>
-                      <td className="py-2 px-3 font-medium text-gray-900">{a.name}</td>
-                      <td className="py-2 px-3 text-gray-500">{a.zone.name}</td>
-                      <td className="py-2 px-3 text-right">
+                    <tr key={a.id} className="hover:bg-zinc-50/50">
+                      <td className="py-2.5 px-3 font-mono font-bold text-zinc-900">{a.postalCode}</td>
+                      <td className="py-2.5 px-3 font-medium text-zinc-800">{a.name}</td>
+                      <td className="py-2.5 px-3 text-zinc-500">{a.zone.name}</td>
+                      <td className="py-2.5 px-3 text-right">
                         <button
                           onClick={() => handleDeleteArea(a.id)}
-                          className="text-red-500 hover:text-red-700 p-1"
+                          className="text-zinc-400 hover:text-rose-600 transition p-1"
                         >
-                          <Trash2 className="h-4 w-4 inline" />
+                          <Trash2 className="w-3.5 h-3.5 inline" />
                         </button>
                       </td>
                     </tr>
@@ -1181,27 +1266,29 @@ export default function AdminDashboard() {
               </table>
             </div>
           </div>
-
         </div>
       )}
 
       {/* ==================================================== */}
-      {/* RATE CARDS TAB */}
+      {/* 6. RATE CARDS MATRIX TAB */}
       {/* ==================================================== */}
       {activeTab === 'rates' && (
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-6 animate-fadeIn">
-          <div>
-            <h2 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4">Configurable Pricing Rate Cards</h2>
+        <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-6 animate-fadeIn">
+          <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+            <div>
+              <h2 className="text-base font-bold text-zinc-900">Configurable Dynamic Rate Matrix</h2>
+              <p className="text-xs text-zinc-400">Configure base rate, weight tier multipliers, and COD surcharge per sector pairing.</p>
+            </div>
           </div>
 
-          <form onSubmit={handleCreateRateCard} className="bg-gray-50 p-4 border rounded-xl space-y-3">
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-2 items-end">
+          <form onSubmit={handleCreateRateCard} className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-3">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">From Zone</label>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">From Zone</label>
                 <select
                   value={newRcFromZone}
                   onChange={(e) => setNewRcFromZone(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border bg-white focus:outline-none"
+                  className="w-full px-2 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none"
                 >
                   {zones.map((z) => (
                     <option key={z.id} value={z.id}>{z.name}</option>
@@ -1210,11 +1297,11 @@ export default function AdminDashboard() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">To Zone</label>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">To Zone</label>
                 <select
                   value={newRcToZone}
                   onChange={(e) => setNewRcToZone(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border bg-white focus:outline-none"
+                  className="w-full px-2 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none"
                 >
                   {zones.map((z) => (
                     <option key={z.id} value={z.id}>{z.name}</option>
@@ -1223,96 +1310,100 @@ export default function AdminDashboard() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Order Type</label>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Order Type</label>
                 <select
                   value={newRcType}
                   onChange={(e) => setNewRcType(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border bg-white focus:outline-none"
+                  className="w-full px-2 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none"
                 >
-                  <option value="B2C">B2C (Retail)</option>
-                  <option value="B2B">B2B (Enterprise)</option>
+                  <option value="B2C">B2C Retail</option>
+                  <option value="B2B">B2B Enterprise</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Base Charge (₹)</label>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Base Rate (₹)</label>
                 <input
                   type="number"
                   required
                   value={newRcBase}
                   onChange={(e) => setNewRcBase(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                  className="w-full px-2 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Rate per Kg (₹)</label>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Rate / Kg (₹)</label>
                 <input
                   type="number"
                   required
                   value={newRcPerKg}
                   onChange={(e) => setNewRcPerKg(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                  className="w-full px-2 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">COD Fee (₹)</label>
+                <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">COD Fee (₹)</label>
                 <input
                   type="number"
                   required
                   value={newRcCod}
                   onChange={(e) => setNewRcCod(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                  className="w-full px-2 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
                 />
               </div>
             </div>
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 rounded text-xs transition shadow-sm"
+              className="w-full bg-zinc-900 text-white font-bold py-1.5 rounded-lg text-xs hover:bg-zinc-800 transition"
             >
-              Add Pricing Route Rule
+              Commit Pricing Route Rule
             </button>
           </form>
 
           <div className="overflow-x-auto max-h-[400px]">
-            <table className="min-w-full text-xs text-left text-gray-600">
-              <thead className="bg-gray-50 text-gray-700 uppercase font-semibold">
+            <table className="min-w-full text-xs text-left">
+              <thead className="bg-zinc-50/75 text-zinc-500 font-bold uppercase text-[10px] tracking-wider border-y border-zinc-100">
                 <tr>
-                  <th className="py-2 px-3">Pickup Zone</th>
-                  <th className="py-2 px-3">Drop Zone</th>
-                  <th className="py-2 px-3">Route Category</th>
-                  <th className="py-2 px-3">Order Type</th>
-                  <th className="py-2 px-3">Base Charge</th>
-                  <th className="py-2 px-3">Price Per Kg</th>
-                  <th className="py-2 px-3">COD Surcharge</th>
-                  <th className="py-2 px-3 text-right">Delete</th>
+                  <th className="py-2.5 px-3">Pickup Zone</th>
+                  <th className="py-2.5 px-3">Drop Zone</th>
+                  <th className="py-2.5 px-3">Route Category</th>
+                  <th className="py-2.5 px-3">Tier</th>
+                  <th className="py-2.5 px-3">Base Rate</th>
+                  <th className="py-2.5 px-3">Rate / Kg</th>
+                  <th className="py-2.5 px-3">COD Fee</th>
+                  <th className="py-2.5 px-3 text-right">Delete</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-zinc-100 text-zinc-700">
                 {rateCards.map((rc) => {
                   const isIntra = rc.fromZoneId === rc.toZoneId;
                   return (
-                    <tr key={rc.id} className="hover:bg-gray-50/50">
-                      <td className="py-2.5 px-3 font-semibold text-gray-800">{rc.fromZone.name}</td>
-                      <td className="py-2.5 px-3 font-semibold text-gray-800">{rc.toZone.name}</td>
+                    <tr key={rc.id} className="hover:bg-zinc-50/50">
+                      <td className="py-2.5 px-3 font-semibold text-zinc-800">{rc.fromZone.name}</td>
+                      <td className="py-2.5 px-3 font-semibold text-zinc-800">{rc.toZone.name}</td>
                       <td className="py-2.5 px-3">
                         {isIntra ? (
-                          <span className="px-2 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded font-semibold text-[10px]">Intra-Zone</span>
+                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold text-[10px]">
+                            Intra-Zone
+                          </span>
                         ) : (
-                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded font-semibold text-[10px]">Inter-Zone</span>
+                          <span className="px-2 py-0.5 bg-sky-50 text-sky-700 border border-sky-200 rounded-full font-bold text-[10px]">
+                            Inter-Zone
+                          </span>
                         )}
                       </td>
-                      <td className="py-2.5 px-3 font-bold text-gray-900">{rc.orderType}</td>
-                      <td className="py-2.5 px-3 font-medium">₹{rc.baseCharge.toFixed(2)}</td>
-                      <td className="py-2.5 px-3 font-medium">₹{rc.ratePerKg.toFixed(2)} / kg</td>
-                      <td className="py-2.5 px-3 font-medium">₹{rc.codSurcharge.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 font-bold text-zinc-900">{rc.orderType}</td>
+                      <td className="py-2.5 px-3 font-mono font-medium">₹{rc.baseCharge.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 font-mono font-medium">₹{rc.ratePerKg.toFixed(2)} / kg</td>
+                      <td className="py-2.5 px-3 font-mono font-medium">₹{rc.codSurcharge.toFixed(2)}</td>
                       <td className="py-2.5 px-3 text-right">
                         <button
                           onClick={() => handleDeleteRateCard(rc.id)}
-                          className="text-red-500 hover:text-red-700"
+                          className="text-zinc-400 hover:text-rose-600 transition p-1"
                         >
-                          <Trash2 className="h-4 w-4 inline" />
+                          <Trash2 className="w-3.5 h-3.5 inline" />
                         </button>
                       </td>
                     </tr>
@@ -1325,41 +1416,50 @@ export default function AdminDashboard() {
       )}
 
       {/* ==================================================== */}
-      {/* AGENTS TAB */}
+      {/* 7. COURIER FLEET TAB */}
       {/* ==================================================== */}
       {activeTab === 'agents' && (
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4 animate-fadeIn">
-          <div>
-            <h2 className="text-lg font-bold text-gray-800 border-b pb-2 mb-2">Delivery Agents Registry</h2>
+        <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-4 animate-fadeIn">
+          <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+            <div>
+              <h2 className="text-base font-bold text-zinc-900">Courier Fleet Registry & Telemetry ({agents.length})</h2>
+              <p className="text-xs text-zinc-400">Real-time GPS coordinate telemetry and duty availability state.</p>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full text-xs text-left text-gray-600">
-              <thead className="bg-gray-50 text-gray-700 uppercase font-semibold">
+            <table className="min-w-full text-xs text-left">
+              <thead className="bg-zinc-50/75 text-zinc-500 font-bold uppercase text-[10px] tracking-wider border-y border-zinc-100">
                 <tr>
-                  <th className="py-2 px-3">Agent Name</th>
-                  <th className="py-2 px-3">Email Address</th>
-                  <th className="py-2 px-3">Current Zone</th>
-                  <th className="py-2 px-3">Coordinates (Lat, Lng)</th>
-                  <th className="py-2 px-3 text-center">Status</th>
+                  <th className="py-3 px-3">Agent Name</th>
+                  <th className="py-3 px-3">Email Address</th>
+                  <th className="py-3 px-3">Linked Sector</th>
+                  <th className="py-3 px-3">Live Telemetry (Lat, Lng)</th>
+                  <th className="py-3 px-3 text-center">Duty Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-zinc-100 text-zinc-700 font-medium">
                 {agents.map((ag) => (
-                  <tr key={ag.id} className="hover:bg-gray-50/50">
-                    <td className="py-3 px-3 font-bold text-gray-900">{ag.user.name}</td>
-                    <td className="py-3 px-3">{ag.user.email}</td>
-                    <td className="py-3 px-3 font-medium text-gray-700">{ag.currentZone?.name || 'Unassigned'}</td>
-                    <td className="py-3 px-3 font-mono text-gray-500">
+                  <tr key={ag.id} className="hover:bg-zinc-50/50">
+                    <td className="py-3 px-3 font-bold text-zinc-900">{ag.user.name}</td>
+                    <td className="py-3 px-3 text-zinc-500">{ag.user.email}</td>
+                    <td className="py-3 px-3 font-semibold text-zinc-800">{ag.currentZone?.name || 'Unassigned'}</td>
+                    <td className="py-3 px-3 font-mono text-[11px] text-zinc-600">
                       {ag.currentLat !== null && ag.currentLng !== null 
                         ? `${ag.currentLat?.toFixed(4)}, ${ag.currentLng?.toFixed(4)}`
-                        : 'No Coordinates'}
+                        : 'Calibrating GPS...'}
                     </td>
                     <td className="py-3 px-3 text-center">
                       {ag.isAvailable ? (
-                        <span className="px-2.5 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded-full font-bold text-[10px] uppercase">Available</span>
+                        <span className="inline-flex items-center px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold text-[10px]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+                          Available
+                        </span>
                       ) : (
-                        <span className="px-2.5 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded-full font-bold text-[10px] uppercase">Busy</span>
+                        <span className="inline-flex items-center px-2 py-0.5 bg-zinc-100 text-zinc-600 border border-zinc-200 rounded-full font-bold text-[10px]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 mr-1.5"></span>
+                          Busy / Off Duty
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -1369,7 +1469,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

@@ -2,18 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../App';
 import {
   Truck,
-  UserCheck,
-  CheckCircle,
-  XCircle,
+  CheckCircle2,
   AlertCircle,
   ChevronRight,
   MapPin,
   RefreshCw,
   Edit2,
-  Info,
-  Calendar,
   Layers,
-  Inbox
+  Inbox,
+  X,
+  Compass,
+  ArrowRight,
+  ShieldCheck,
+  Building,
+  User,
+  Clock
 } from 'lucide-react';
 
 interface Order {
@@ -121,7 +124,7 @@ export default function AgentDashboard() {
       });
       const data = await res.json();
       setProfile(data);
-      showSuccess(`Status toggled successfully. You are now ${data.isAvailable ? 'Available' : 'Unavailable'}.`);
+      showSuccess(`Duty status updated. You are now ${data.isAvailable ? 'Online & Available for dispatches' : 'Off Duty'}.`);
     } catch (e) {
       console.error(e);
     }
@@ -144,7 +147,7 @@ export default function AgentDashboard() {
       const data = await res.json();
       setProfile(data);
       setEditingLoc(false);
-      showSuccess('Location coordinates updated successfully!');
+      showSuccess('GPS coordinates calibrated successfully!');
       fetchOrders();
     } catch (e) {
       showError('Failed to update coordinates.');
@@ -169,7 +172,7 @@ export default function AgentDashboard() {
 
       if (!res.ok) throw new Error(data.error || 'Update failed.');
 
-      showSuccess(`Order status updated to ${newStatus}!`);
+      showSuccess(`Consignment status updated to ${newStatus}!`);
       setNewStatus('');
       setNotes('');
       setSelectedOrder(null);
@@ -185,21 +188,60 @@ export default function AgentDashboard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return <span className="px-2.5 py-0.5 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded text-[10px] font-bold uppercase tracking-wider">Pending</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 animate-pulse"></span>
+            Pending
+          </span>
+        );
       case 'ASSIGNED':
-        return <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[10px] font-bold uppercase tracking-wider">Assigned</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-500 mr-1.5"></span>
+            Assigned
+          </span>
+        );
       case 'PICKED_UP':
-        return <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded text-[10px] font-bold uppercase tracking-wider">Picked Up</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-1.5"></span>
+            Picked Up
+          </span>
+        );
       case 'IN_TRANSIT':
-        return <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[10px] font-bold uppercase tracking-wider">In Transit</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mr-1.5 animate-pulse"></span>
+            In Transit
+          </span>
+        );
       case 'OUT_FOR_DELIVERY':
-        return <span className="px-2.5 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 rounded text-[10px] font-bold uppercase tracking-wider">Out for Delivery</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mr-1.5 animate-pulse"></span>
+            Out for Delivery
+          </span>
+        );
       case 'DELIVERED':
-        return <span className="px-2.5 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded text-[10px] font-bold uppercase tracking-wider">Delivered</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+            Delivered
+          </span>
+        );
       case 'FAILED':
-        return <span className="px-2.5 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded text-[10px] font-bold uppercase tracking-wider">Failed</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5"></span>
+            Failed
+          </span>
+        );
       default:
-        return <span className="px-2.5 py-0.5 bg-gray-50 text-gray-700 border border-gray-200 rounded text-[10px] font-bold uppercase tracking-wider">{status}</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 text-zinc-700 border border-zinc-200">
+            {status}
+          </span>
+        );
     }
   };
 
@@ -210,158 +252,183 @@ export default function AgentDashboard() {
 
   return (
     <div className="space-y-6">
-      
-      {/* 1. AGENT STATISTICS METRICS */}
+      {/* 1. AGENT BENTO METRICS */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+        <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm card-hover flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Assigned Shipments</span>
-            <h3 className="text-2xl font-black text-gray-900">{totalAssigned}</h3>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Total Route Load</span>
+            <h3 className="text-2xl font-black text-zinc-900 tracking-tight">{totalAssigned}</h3>
+            <span className="text-[10px] text-zinc-500 font-medium">Assigned to courier</span>
           </div>
-          <div className="bg-indigo-50 text-indigo-600 p-2.5 rounded-lg">
-            <Layers className="h-5 w-5" />
+          <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center text-indigo-600">
+            <Layers className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+        <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm card-hover flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Awaiting Pickup</span>
-            <h3 className="text-2xl font-black text-gray-900">{pendingPickup}</h3>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Awaiting Pickup</span>
+            <h3 className="text-2xl font-black text-zinc-900 tracking-tight">{pendingPickup}</h3>
+            <span className="text-[10px] text-sky-600 font-medium">Initial assignment</span>
           </div>
-          <div className="bg-blue-50 text-blue-600 p-2.5 rounded-lg">
-            <Inbox className="h-5 w-5" />
+          <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100/80 flex items-center justify-center text-sky-600">
+            <Inbox className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+        <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm card-hover flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">In-Transit Pipeline</span>
-            <h3 className="text-2xl font-black text-gray-900">{transitCount}</h3>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Active Transit</span>
+            <h3 className="text-2xl font-black text-zinc-900 tracking-tight">{transitCount}</h3>
+            <span className="text-[10px] text-amber-600 font-medium">In handover pipeline</span>
           </div>
-          <div className="bg-yellow-50 text-yellow-600 p-2.5 rounded-lg">
-            <Truck className="h-5 w-5" />
+          <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100/80 flex items-center justify-center text-amber-600">
+            <Truck className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+        <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm card-hover flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Completed Drops</span>
-            <h3 className="text-2xl font-black text-gray-900">{completedDrops}</h3>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Completed Drops</span>
+            <h3 className="text-2xl font-black text-zinc-900 tracking-tight">{completedDrops}</h3>
+            <span className="text-[10px] text-emerald-600 font-medium">Successful handovers</span>
           </div>
-          <div className="bg-green-50 text-green-600 p-2.5 rounded-lg">
-            <CheckCircle className="h-5 w-5" />
+          <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-emerald-600">
+            <CheckCircle2 className="w-5 h-5" />
           </div>
         </div>
       </div>
 
-      {/* Page Header Bar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-xl border border-gray-200 shadow-sm gap-4">
+      {/* 2. OPERATIONAL STATUS BAR */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-5 rounded-2xl border border-zinc-200/80 shadow-sm gap-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Agent Dispatch Queue</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Toggle availability status, verify GPS pins, and log route status.</p>
+          <div className="flex items-center space-x-2">
+            <h1 className="text-xl font-bold tracking-tight text-zinc-900">Courier Dispatch Terminal</h1>
+            <span className="text-[10px] font-mono bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded border border-zinc-200 font-bold">
+              AGENT
+            </span>
+          </div>
+          <p className="text-xs text-zinc-500 mt-1 font-medium">
+            Manage dispatch status milestones, calibrate GPS pins, and acknowledge custody handoffs.
+          </p>
         </div>
+
         {profile && (
           <div className="flex items-center space-x-3">
             <button
               onClick={handleToggleAvailability}
-              className={`flex items-center px-4 py-2 rounded-lg font-bold text-xs shadow transition uppercase tracking-wider ${
+              className={`flex items-center px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm border ${
                 profile.isAvailable
-                  ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-100'
-                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200/80 hover:bg-emerald-100'
+                  : 'bg-zinc-100 text-zinc-700 border-zinc-200 hover:bg-zinc-200'
               }`}
             >
-              <UserCheck className="h-4.5 w-4.5 mr-2" />
-              Duty: {profile.isAvailable ? 'ON DUTY (AVAIL)' : 'OFF DUTY (BUSY)'}
+              <span className={`w-2 h-2 rounded-full mr-2 ${profile.isAvailable ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400'}`}></span>
+              <span>{profile.isAvailable ? 'Status: Available (On Duty)' : 'Status: Busy (Off Duty)'}</span>
             </button>
             <button
               onClick={() => {
                 fetchProfile();
                 fetchOrders();
               }}
-              className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              className="p-2.5 rounded-xl border border-zinc-200/80 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition"
               title="Refresh Console"
             >
-              <RefreshCw className="h-4 w-4 text-gray-600" />
+              <RefreshCw className="w-4 h-4" />
             </button>
           </div>
         )}
       </div>
 
-      {/* SUCCESS / ERROR INLINE ALERTS */}
+      {/* Notifications */}
       {successMsg && (
-        <div className="bg-green-50 text-green-800 px-4 py-3 rounded-lg border border-green-200 text-sm font-semibold flex items-center transition shadow-sm animate-fadeIn">
-          <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+        <div className="bg-emerald-50/80 text-emerald-800 px-4 py-3 rounded-xl border border-emerald-200 text-xs font-semibold flex items-center animate-fadeIn shadow-sm">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 mr-2 flex-shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
       {errorMsg && (
-        <div className="bg-red-50 text-red-800 px-4 py-3 rounded-lg border border-red-200 text-sm font-semibold flex items-center transition shadow-sm animate-fadeIn">
-          <AlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
+        <div className="bg-rose-50/80 text-rose-800 px-4 py-3 rounded-xl border border-rose-200 text-xs font-semibold flex items-center animate-fadeIn shadow-sm">
+          <AlertCircle className="h-4 w-4 text-rose-600 mr-2 flex-shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
+      {/* 3. MAIN WORKSPACE GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* LEFT COLUMN: Agent Location Profile */}
-        <div className="lg:col-span-1 bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-5">
-          <div className="flex items-center space-x-2 border-b border-gray-100 pb-3">
-            <MapPin className="h-5 w-5 text-indigo-600" />
-            <h2 className="text-lg font-bold text-gray-800 font-sans">Operational Profile</h2>
+        {/* Left Column: GPS & Telemetry Card */}
+        <div className="lg:col-span-1 bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-5">
+          <div className="flex items-center space-x-2.5 pb-3 border-b border-zinc-100">
+            <div className="w-8 h-8 rounded-lg bg-zinc-900 text-white flex items-center justify-center">
+              <Compass className="w-4 h-4 text-indigo-400" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-zinc-900">Telemetry & Sector</h2>
+              <span className="text-[10px] text-zinc-400 font-mono">GPS Routing Engine</span>
+            </div>
           </div>
 
           {profile && (
             <div className="space-y-4">
-              <div className="text-sm space-y-2">
-                <p className="flex justify-between border-b pb-1">
-                  <strong className="text-gray-500">Linked Region:</strong>{' '}
-                  <span className="font-bold text-gray-800">{profile.currentZone?.name || 'Unconfigured Zone'}</span>
-                </p>
-                <p className="flex justify-between border-b pb-1">
-                  <strong className="text-gray-500">Live Latitude:</strong> <span className="font-mono text-gray-700">{profile.currentLat || 'N/A'}</span>
-                </p>
-                <p className="flex justify-between border-b pb-1">
-                  <strong className="text-gray-500">Live Longitude:</strong> <span className="font-mono text-gray-700">{profile.currentLng || 'N/A'}</span>
-                </p>
+              <div className="space-y-2.5 text-xs text-zinc-700">
+                <div className="flex justify-between items-center p-3 rounded-xl bg-zinc-50 border border-zinc-200/60">
+                  <span className="text-zinc-500 font-medium">Assigned Sector:</span>
+                  <span className="font-bold text-zinc-900">
+                    {profile.currentZone?.name || 'Central Hub'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 rounded-xl bg-zinc-50 border border-zinc-200/60 font-mono text-[11px]">
+                  <span className="text-zinc-500 font-sans font-medium">Current Latitude:</span>
+                  <span className="font-bold text-zinc-800">{profile.currentLat ?? '28.6139'}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 rounded-xl bg-zinc-50 border border-zinc-200/60 font-mono text-[11px]">
+                  <span className="text-zinc-500 font-sans font-medium">Current Longitude:</span>
+                  <span className="font-bold text-zinc-800">{profile.currentLng ?? '77.2090'}</span>
+                </div>
               </div>
 
               {editingLoc ? (
-                <form onSubmit={handleUpdateLocation} className="space-y-3 p-3 bg-gray-50 rounded-lg border">
+                <form onSubmit={handleUpdateLocation} className="space-y-3 p-4 rounded-xl bg-zinc-50 border border-zinc-200 animate-fadeIn">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase">Latitude</label>
+                      <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">
+                        Latitude
+                      </label>
                       <input
                         type="number"
                         step="0.0001"
                         required
                         value={newLat}
                         onChange={(e) => setNewLat(e.target.value)}
-                        className="w-full px-2 py-1 border rounded text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase">Longitude</label>
+                      <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-1">
+                        Longitude
+                      </label>
                       <input
                         type="number"
                         step="0.0001"
                         required
                         value={newLng}
                         onChange={(e) => setNewLng(e.target.value)}
-                        className="w-full px-2 py-1 border rounded text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                        className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
                       />
                     </div>
                   </div>
-                  <div className="flex space-x-2 text-xs">
+                  <div className="flex space-x-2 pt-1 text-xs">
                     <button
                       type="submit"
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded"
+                      className="flex-1 bg-zinc-900 text-white font-bold py-1.5 px-3 rounded-lg hover:bg-zinc-800 transition"
                     >
                       Save Coordinates
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingLoc(false)}
-                      className="bg-gray-200 text-gray-700 px-2.5 py-1 rounded"
+                      className="px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-100 transition"
                     >
                       Cancel
                     </button>
@@ -370,70 +437,74 @@ export default function AgentDashboard() {
               ) : (
                 <button
                   onClick={() => setEditingLoc(true)}
-                  className="w-full border border-gray-300 hover:bg-gray-50 text-gray-700 py-1.5 px-3 rounded-lg text-xs font-bold flex items-center justify-center space-x-1.5 transition"
+                  className="w-full border border-zinc-200 hover:border-zinc-900 text-zinc-700 hover:text-zinc-900 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition bg-white shadow-sm"
                 >
-                  <Edit2 className="h-3.5 w-3.5" />
-                  <span>Update Location (Coordinates)</span>
+                  <Edit2 className="w-3.5 h-3.5 text-zinc-400" />
+                  <span>Calibrate Coordinates</span>
                 </button>
               )}
 
-              <div className="p-3 bg-indigo-50 text-indigo-700 rounded-lg text-xs flex items-start space-x-2">
-                <Info className="h-4 w-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                <span>
-                  Proximity routing automatically assigns you to bookings based on your coordinates. Keep your GPS pins updated to receive nearby dispatches.
+              <div className="p-3.5 rounded-xl bg-indigo-50/70 border border-indigo-200/60 text-xs text-indigo-950 space-y-1">
+                <span className="font-bold flex items-center">
+                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 mr-1.5" />
+                  Haversine Auto-Match
                 </span>
+                <p className="text-[11px] text-indigo-800 leading-relaxed">
+                  The dispatcher matches you with pickups nearest to these coordinates. Keep GPS updated to claim nearby tasks.
+                </p>
               </div>
             </div>
           )}
         </div>
 
-        {/* RIGHT COLUMN: Assigned Orders list and actions */}
+        {/* Right Column: Queue & Status Workflow */}
         <div className="lg:col-span-2 space-y-6">
           
           {/* Orders Table */}
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-            <div className="flex items-center space-x-2 mb-4 border-b border-gray-100 pb-3">
-              <Truck className="h-5 w-5 text-indigo-600" />
-              <h2 className="text-lg font-bold text-gray-800 font-sans">Active Delivery Queue ({orders.length})</h2>
+          <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+              <div className="flex items-center space-x-2.5">
+                <Truck className="w-5 h-5 text-indigo-600" />
+                <h2 className="text-base font-bold text-zinc-900">Active Task Queue ({orders.length})</h2>
+              </div>
+              <span className="text-[10px] font-mono text-zinc-400">Live Manifest</span>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="min-w-full text-xs text-left text-gray-600">
-                <thead className="bg-gray-50 text-gray-700 uppercase font-semibold">
+              <table className="min-w-full text-xs text-left">
+                <thead className="bg-zinc-50/75 text-zinc-500 font-bold uppercase text-[10px] tracking-wider border-y border-zinc-100">
                   <tr>
-                    <th className="py-2.5 px-3">Order ID</th>
-                    <th className="py-2.5 px-3">Recipient</th>
-                    <th className="py-2.5 px-3">Pickup point</th>
-                    <th className="py-2.5 px-3">Destination</th>
-                    <th className="py-2.5 px-3">Status</th>
-                    <th className="py-2.5 px-3 text-right">Action</th>
+                    <th className="py-3 px-3">Manifest ID</th>
+                    <th className="py-3 px-3">Recipient</th>
+                    <th className="py-3 px-3">Pickup</th>
+                    <th className="py-3 px-3">Dropoff</th>
+                    <th className="py-3 px-3">Stage</th>
+                    <th className="py-3 px-3 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-zinc-100 text-zinc-700 font-medium">
                   {orders.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-10 text-gray-400">
-                        <svg className="w-12 h-12 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                        </svg>
-                        <p className="font-semibold text-gray-500 text-sm">No shipments assigned</p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">Toggle duty to "Available" to get automatically assigned.</p>
+                      <td colSpan={6} className="text-center py-12 text-zinc-400">
+                        <Inbox className="w-10 h-10 text-zinc-300 mx-auto mb-2" />
+                        <p className="font-bold text-zinc-600 text-xs">No parcels assigned in your sector</p>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">Toggle duty to "Available" to get automatically assigned.</p>
                       </td>
                     </tr>
                   ) : (
                     orders.map((o) => (
-                      <tr key={o.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="py-3 px-3 font-mono font-bold text-gray-900">
-                          {o.id.split('-')[0]}
+                      <tr key={o.id} className="hover:bg-zinc-50/70 transition-colors">
+                        <td className="py-3 px-3 font-mono font-bold text-zinc-900">
+                          #{o.id.split('-')[0]}
                         </td>
-                        <td className="py-3 px-3 text-xs font-semibold">{o.customer.name}</td>
-                        <td className="py-3 px-3 text-xs">
-                          {o.pickupAddress} <br />
-                          <span className="text-gray-400">({o.pickupArea.name})</span>
+                        <td className="py-3 px-3 font-semibold text-zinc-900">{o.customer.name}</td>
+                        <td className="py-3 px-3">
+                          <span className="font-semibold text-zinc-800">{o.pickupArea.name}</span>
+                          <span className="text-[10px] text-zinc-400 block font-mono">{o.pickupArea.postalCode}</span>
                         </td>
-                        <td className="py-3 px-3 text-xs">
-                          {o.dropAddress} <br />
-                          <span className="text-gray-400">({o.dropArea.name})</span>
+                        <td className="py-3 px-3">
+                          <span className="font-semibold text-zinc-800">{o.dropArea.name}</span>
+                          <span className="text-[10px] text-zinc-400 block font-mono">{o.dropArea.postalCode}</span>
                         </td>
                         <td className="py-3 px-3">{getStatusBadge(o.status)}</td>
                         <td className="py-3 px-3 text-right">
@@ -442,10 +513,10 @@ export default function AgentDashboard() {
                               setSelectedOrder(o);
                               setNewStatus(o.status);
                             }}
-                            className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold py-1 px-2.5 rounded flex inline-flex items-center space-x-1 text-[10px] uppercase tracking-wider transition"
+                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-zinc-700 bg-zinc-100 hover:bg-zinc-900 hover:text-white transition"
                           >
-                            <span>Open</span>
-                            <ChevronRight className="h-3.5 w-3.5" />
+                            <span>Open Task</span>
+                            <ChevronRight className="w-3 h-3" />
                           </button>
                         </td>
                       </tr>
@@ -456,72 +527,95 @@ export default function AgentDashboard() {
             </div>
           </div>
 
-          {/* Detailed Status Updater Panel */}
+          {/* Detailed Status Updater Drawer/Card */}
           {selectedOrder && (
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4 animate-fadeIn">
-              <h3 className="text-base font-bold text-gray-800 border-b border-gray-100 pb-2 flex justify-between items-center">
-                <span>Update Journey stage for Order #{selectedOrder.id.split('-')[0]}</span>
+            <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-5 animate-fadeIn">
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-bold text-zinc-900">
+                    Handover Status: Order #{selectedOrder.id.split('-')[0]}
+                  </span>
+                  {getStatusBadge(selectedOrder.status)}
+                </div>
                 <button
                   onClick={() => setSelectedOrder(null)}
-                  className="text-xs text-gray-400 hover:text-gray-600 font-bold"
+                  className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition"
                 >
-                  Close
+                  <X className="w-4 h-4" />
                 </button>
-              </h3>
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-700">
-                <div>
-                  <p><strong>Recipient Company:</strong> {selectedOrder.customer.name} ({selectedOrder.customer.email})</p>
-                  <p><strong>Pickup address:</strong> {selectedOrder.pickupAddress} ({selectedOrder.pickupArea.name})</p>
-                  <p><strong>Drop address:</strong> {selectedOrder.dropAddress} ({selectedOrder.dropArea.name})</p>
+              {/* Waybill Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-zinc-600 bg-zinc-50 p-4 rounded-xl border border-zinc-200/70">
+                <div className="space-y-1.5">
+                  <p>
+                    <strong className="text-zinc-900">Consignee:</strong> {selectedOrder.customer.name} ({selectedOrder.customer.email})
+                  </p>
+                  <p>
+                    <strong className="text-zinc-900">Pickup Origin:</strong> {selectedOrder.pickupAddress} ({selectedOrder.pickupArea.name})
+                  </p>
+                  <p>
+                    <strong className="text-zinc-900">Destination:</strong> {selectedOrder.dropAddress} ({selectedOrder.dropArea.name})
+                  </p>
                 </div>
-                <div>
-                  <p><strong>Payment terms:</strong> {selectedOrder.paymentType}</p>
-                  <p><strong>Total charge:</strong> ₹{selectedOrder.totalCharge.toFixed(2)}</p>
-                  <p><strong>Active stage:</strong> {getStatusBadge(selectedOrder.status)}</p>
+                <div className="space-y-1.5">
+                  <p>
+                    <strong className="text-zinc-900">Terms:</strong> {selectedOrder.paymentType}
+                  </p>
+                  <p>
+                    <strong className="text-zinc-900">Billable Charge:</strong>{' '}
+                    <span className="font-mono font-bold text-zinc-900">₹{selectedOrder.totalCharge.toFixed(2)}</span>
+                  </p>
+                  <p>
+                    <strong className="text-zinc-900">Dimensions:</strong> {selectedOrder.length}×{selectedOrder.width}×{selectedOrder.height} cm ({selectedOrder.actualWeight} kg)
+                  </p>
                 </div>
               </div>
 
               {/* Status Update Form */}
-              <form onSubmit={handleStatusUpdate} className="bg-gray-50 border p-4 rounded-xl space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form onSubmit={handleStatusUpdate} className="space-y-4 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">Select New Journey Stage</label>
+                    <label className="block text-[11px] font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
+                      Progress Journey Stage
+                    </label>
                     <select
                       value={newStatus}
                       onChange={(e) => setNewStatus(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                      className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-zinc-900 font-medium text-zinc-900"
                     >
-                      <option value="ASSIGNED">Assigned (Initial)</option>
-                      <option value="PICKED_UP">Picked Up</option>
-                      <option value="IN_TRANSIT">In Transit</option>
-                      <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-                      <option value="DELIVERED">Delivered (Success)</option>
-                      <option value="FAILED">Failed Attempt</option>
+                      <option value="ASSIGNED">Assigned (Awaiting Pickup)</option>
+                      <option value="PICKED_UP">Picked Up (In Hand)</option>
+                      <option value="IN_TRANSIT">In Transit (Cross-Dock)</option>
+                      <option value="OUT_FOR_DELIVERY">Out for Delivery (Last Mile)</option>
+                      <option value="DELIVERED">Delivered (Successful Completion)</option>
+                      <option value="FAILED">Failed Attempt (Receiver Unreachable)</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1 uppercase tracking-wider">Timeline log note / Fail Reason</label>
+                    <label className="block text-[11px] font-bold text-zinc-700 uppercase tracking-wider mb-1.5">
+                      Timeline Note / Handover Description
+                    </label>
                     <input
                       type="text"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder={
                         newStatus === 'FAILED'
-                          ? 'Specify reason, e.g. Receiver unreachable.'
-                          : 'Enter timeline description notes...'
+                          ? 'Specify reason, e.g. Customer unavailable at door'
+                          : 'e.g. Package collected from warehouse counter'
                       }
                       required={newStatus === 'FAILED'}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                      className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-zinc-900"
                     />
                   </div>
                 </div>
 
                 {newStatus === 'FAILED' && (
-                  <div className="flex items-center space-x-2 text-red-700 bg-red-50 p-2.5 rounded-lg border border-red-200 text-xs">
-                    <AlertCircle className="h-4.5 w-4.5 text-red-500" />
+                  <div className="flex items-center space-x-2 text-rose-800 bg-rose-50 p-3 rounded-xl border border-rose-200 text-xs">
+                    <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
                     <span>
-                      Warning: Marking as FAILED triggers an automated customer alert to reschedule. Your profile will be released back to 'Available'.
+                      Notice: Logging as FAILED triggers an automated alert for the customer to reschedule. Your profile will be marked available for other orders.
                     </span>
                   </div>
                 )}
@@ -529,9 +623,10 @@ export default function AgentDashboard() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs shadow-md transition"
+                  className="w-full bg-zinc-900 text-white py-3 rounded-xl text-xs sm:text-sm font-bold hover:bg-zinc-800 transition shadow-sm flex items-center justify-center space-x-2"
                 >
-                  {loading ? 'Submitting Status Update...' : 'Commit Status Change'}
+                  <span>{loading ? 'Transmitting Telemetry Update...' : 'Commit Status Milestone'}</span>
+                  {!loading && <ArrowRight className="w-3.5 h-3.5 text-zinc-400" />}
                 </button>
               </form>
             </div>

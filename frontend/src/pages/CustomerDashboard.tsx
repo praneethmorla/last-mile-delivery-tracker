@@ -4,19 +4,22 @@ import {
   Package,
   Calculator,
   Compass,
-  Clock,
-  CheckCircle,
+  CheckCircle2,
   Truck,
   AlertTriangle,
-  Calendar,
-  XCircle,
-  Eye,
-  Info,
   History,
   FileSpreadsheet,
   Coins,
-  TrendingUp,
-  Boxes
+  Boxes,
+  ArrowRight,
+  RefreshCw,
+  Search,
+  ChevronRight,
+  X,
+  MapPin,
+  Calendar,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 
 interface Area {
@@ -94,6 +97,9 @@ export default function CustomerDashboard() {
   const [pricingPreview, setPricingPreview] = useState<any>(null);
   const [previewError, setPreviewError] = useState('');
   const [bookingLoading, setBookingLoading] = useState(false);
+
+  // Filter State
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch Areas and Orders on Load
   useEffect(() => {
@@ -186,7 +192,6 @@ export default function CustomerDashboard() {
     }
   };
 
-  // Re-run preview automatically on input change
   useEffect(() => {
     if (pickupAreaId && dropAreaId) {
       handlePreviewPrice();
@@ -222,22 +227,17 @@ export default function CustomerDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Booking failed.');
 
-      // Reset form fields
       setPickupAddress('');
       setDropAddress('');
       setPricingPreview(null);
-      
-      // Update orders
       await fetchOrders();
       
-      // Select the newly placed order to show tracking
       if (data.id) {
         fetchOrderDetails(data.id);
       }
       
-      // Switch tab to History
       setActiveSubTab('history');
-      showSuccess('Order placed successfully! Redirecting you to the tracking page.');
+      showSuccess('Shipment created successfully! Courier agent dispatched.');
     } catch (err: any) {
       showError(err.message || 'Failed to place order.');
     } finally {
@@ -262,7 +262,7 @@ export default function CustomerDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Reschedule failed.');
 
-      setRescheduleSuccess('Order rescheduled successfully and a new agent is being assigned!');
+      setRescheduleSuccess('Order rescheduled! New agent auto-assignment triggered.');
       fetchOrderDetails(selectedOrder.id);
       fetchOrders();
     } catch (err: any) {
@@ -273,378 +273,494 @@ export default function CustomerDashboard() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return <span className="px-2.5 py-0.5 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Pending</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 animate-pulse"></span>
+            Pending
+          </span>
+        );
       case 'ASSIGNED':
-        return <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Assigned</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-500 mr-1.5"></span>
+            Assigned
+          </span>
+        );
       case 'PICKED_UP':
-        return <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Picked Up</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mr-1.5"></span>
+            Picked Up
+          </span>
+        );
       case 'IN_TRANSIT':
-        return <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-full text-[10px] font-bold uppercase tracking-wider">In Transit</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mr-1.5 animate-pulse"></span>
+            In Transit
+          </span>
+        );
       case 'OUT_FOR_DELIVERY':
-        return <span className="px-2.5 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Out for Delivery</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-700 border border-orange-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mr-1.5 animate-pulse"></span>
+            Out for Delivery
+          </span>
+        );
       case 'DELIVERED':
-        return <span className="px-2.5 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Delivered</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
+            Delivered
+          </span>
+        );
       case 'FAILED':
-        return <span className="px-2.5 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Failed</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5"></span>
+            Failed
+          </span>
+        );
       default:
-        return <span className="px-2.5 py-0.5 bg-gray-50 text-gray-700 border border-gray-200 rounded-full text-[10px] font-bold uppercase tracking-wider">{status}</span>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 text-zinc-700 border border-zinc-200">
+            {status}
+          </span>
+        );
     }
   };
 
-  // Metrics calculations for KPIs
   const totalCost = orders.reduce((sum, o) => sum + o.totalCharge, 0);
   const activeCount = orders.filter((o) => ['PENDING', 'ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(o.status)).length;
   const completedCount = orders.filter((o) => o.status === 'DELIVERED').length;
 
+  const filteredOrders = orders.filter((o) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      o.id.toLowerCase().includes(q) ||
+      o.pickupArea.name.toLowerCase().includes(q) ||
+      o.dropArea.name.toLowerCase().includes(q) ||
+      o.status.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="space-y-6">
-      
-      {/* 1. KEY PERFORMANCE METRICS GRID */}
+      {/* 1. KEY PERFORMANCE METRICS BENTO */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+        <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm card-hover flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Booking Investment</span>
-            <h3 className="text-2xl font-black text-gray-900">₹{totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Total Logistics Spend</span>
+            <h3 className="text-2xl font-black text-zinc-900 tracking-tight">
+              ₹{totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </h3>
+            <span className="text-[10px] text-zinc-500 font-medium">{orders.length} total shipments booked</span>
           </div>
-          <div className="bg-indigo-50 text-indigo-600 p-3 rounded-xl">
-            <Coins className="h-6 w-6" />
+          <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center text-indigo-600">
+            <Coins className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+        <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm card-hover flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Shipments In-Transit</span>
-            <h3 className="text-2xl font-black text-gray-900">{activeCount}</h3>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Active Dispatches</span>
+            <h3 className="text-2xl font-black text-zinc-900 tracking-tight">{activeCount}</h3>
+            <span className="text-[10px] text-amber-600 font-medium flex items-center">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1 animate-pulse"></span>
+              Live on route
+            </span>
           </div>
-          <div className="bg-yellow-50 text-yellow-600 p-3 rounded-xl">
-            <Truck className="h-6 w-6 animate-pulse" />
+          <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100/80 flex items-center justify-center text-amber-600">
+            <Truck className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+        <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm card-hover flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Completed Deliveries</span>
-            <h3 className="text-2xl font-black text-gray-900">{completedCount}</h3>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Completed Orders</span>
+            <h3 className="text-2xl font-black text-zinc-900 tracking-tight">{completedCount}</h3>
+            <span className="text-[10px] text-emerald-600 font-medium">100% Verified Delivery</span>
           </div>
-          <div className="bg-green-50 text-green-600 p-3 rounded-xl">
-            <Boxes className="h-6 w-6" />
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-emerald-600">
+            <Boxes className="w-6 h-6" />
           </div>
         </div>
-
       </div>
 
-      {/* Page Heading & Tabs */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-xl border border-gray-200 shadow-sm gap-4">
+      {/* 2. PAGE HEADER & VIEW SELECTOR */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-5 rounded-2xl border border-zinc-200/80 shadow-sm gap-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Customer Dispatch Operations</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Configure shipment properties and trace parcel routes.</p>
+          <div className="flex items-center space-x-2">
+            <h1 className="text-xl font-bold tracking-tight text-zinc-900">Shipment Management</h1>
+            <span className="text-[10px] font-mono bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded border border-zinc-200 font-bold">
+              PORTAL
+            </span>
+          </div>
+          <p className="text-xs text-zinc-500 mt-1 font-medium">
+            Book consignments, configure volumetric parameters, and inspect immutable audit logs.
+          </p>
         </div>
 
-        {/* Tab Controls */}
-        <div className="flex bg-gray-100 p-1 rounded-lg border text-sm font-semibold">
+        {/* Tab Buttons */}
+        <div className="flex bg-zinc-100/80 p-1 rounded-xl border border-zinc-200/60 text-xs font-semibold">
           <button
             onClick={() => setActiveSubTab('booking')}
-            className={`px-5 py-2 rounded-md transition flex items-center space-x-1.5 ${
-              activeSubTab === 'booking' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            className={`px-4 py-2 rounded-lg transition-all flex items-center space-x-2 ${
+              activeSubTab === 'booking'
+                ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60'
+                : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            <Calculator className="h-4 w-4" />
-            <span>Book Delivery</span>
+            <Package className="w-4 h-4 text-indigo-600" />
+            <span>Create Booking</span>
           </button>
           <button
             onClick={() => setActiveSubTab('history')}
-            className={`px-5 py-2 rounded-md transition flex items-center space-x-1.5 ${
-              activeSubTab === 'history' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            className={`px-4 py-2 rounded-lg transition-all flex items-center space-x-2 ${
+              activeSubTab === 'history'
+                ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/60'
+                : 'text-zinc-600 hover:text-zinc-900'
             }`}
           >
-            <History className="h-4 w-4" />
-            <span>Delivery History</span>
+            <History className="w-4 h-4 text-zinc-500" />
+            <span>Order History ({orders.length})</span>
           </button>
         </div>
       </div>
 
-      {/* SUCCESS / ERROR INLINE ALERTS */}
+      {/* Notifications */}
       {successMsg && (
-        <div className="bg-green-50 text-green-800 px-4 py-3 rounded-lg border border-green-200 text-sm font-semibold flex items-center transition shadow-sm animate-fadeIn">
-          <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+        <div className="bg-emerald-50/80 text-emerald-800 px-4 py-3 rounded-xl border border-emerald-200 text-xs font-semibold flex items-center animate-fadeIn shadow-sm">
+          <CheckCircle2 className="h-4 w-4 text-emerald-600 mr-2 flex-shrink-0" />
           <span>{successMsg}</span>
         </div>
       )}
       {errorMsg && (
-        <div className="bg-red-50 text-red-800 px-4 py-3 rounded-lg border border-red-200 text-sm font-semibold flex items-center transition shadow-sm animate-fadeIn">
-          <AlertTriangle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
+        <div className="bg-rose-50/80 text-rose-800 px-4 py-3 rounded-xl border border-rose-200 text-xs font-semibold flex items-center animate-fadeIn shadow-sm">
+          <AlertTriangle className="h-4 w-4 text-rose-600 mr-2 flex-shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {/* ==================================================== */}
-      {/* BOOKING TAB CONTENT */}
+      {/* 3. CREATE BOOKING VIEW */}
       {/* ==================================================== */}
       {activeSubTab === 'booking' && (
-        <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex items-center space-x-2.5 mb-6 border-b border-gray-100 pb-3">
-            <Package className="h-6 w-6 text-indigo-600" />
-            <h2 className="text-xl font-bold text-gray-800">New Shipment Booking</h2>
+        <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 sm:p-8 animate-fadeIn">
+          <div className="flex items-center space-x-3 pb-5 mb-6 border-b border-zinc-100">
+            <div className="w-9 h-9 rounded-xl bg-zinc-900 text-white flex items-center justify-center">
+              <Package className="w-4 h-4 text-indigo-400" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-zinc-900 tracking-tight">Consignment Specifications</h2>
+              <p className="text-xs text-zinc-400">Fill in the dispatch route and cargo metrics for automated price discovery.</p>
+            </div>
           </div>
 
-          <form onSubmit={handlePlaceOrder} className="space-y-5">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Pickup details */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">1. Pickup Information</h3>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Pickup Address</label>
-                  <input
-                    type="text"
-                    required
-                    value={pickupAddress}
-                    onChange={(e) => setPickupAddress(e.target.value)}
-                    placeholder="E.g., 123 Alpha Road, Apartment 4B"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:border-transparent transition"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Pickup Area (Postal Code)</label>
-                  <select
-                    value={pickupAreaId}
-                    onChange={(e) => setPickupAreaId(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none"
-                  >
-                    {areas.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.postalCode} - {a.name} ({a.zone.name})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Drop details */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">2. Drop Information</h3>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Drop Address</label>
-                  <input
-                    type="text"
-                    required
-                    value={dropAddress}
-                    onChange={(e) => setDropAddress(e.target.value)}
-                    placeholder="E.g., 456 Omega Street, Office 12"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-indigo-600 focus:border-transparent transition"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Drop Area (Postal Code)</label>
-                  <select
-                    value={dropAreaId}
-                    onChange={(e) => setDropAreaId(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none"
-                  >
-                    {areas.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.postalCode} - {a.name} ({a.zone.name})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <hr className="border-gray-100" />
-
-            {/* Package stats */}
+          <form onSubmit={handlePlaceOrder} className="space-y-6">
+            {/* Step 1: Route Coordinates */}
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide">3. Package Statistics</h3>
-              
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Length (cm)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={length}
-                    onChange={(e) => setLength(parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Width (cm)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={width}
-                    onChange={(e) => setWidth(parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Height (cm)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={height}
-                    onChange={(e) => setHeight(parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
-                </div>
-              </div>
+              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center">
+                <MapPin className="w-3.5 h-3.5 mr-1.5 text-zinc-500" />
+                1. Routing & Hub Assignment
+              </span>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Weight (kg)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0.1"
-                    required
-                    value={actualWeight}
-                    onChange={(e) => setActualWeight(parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Pickup Area */}
+                <div className="p-4 rounded-xl bg-zinc-50/60 border border-zinc-200/70 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-zinc-800">Origin / Pickup Point</label>
+                    <span className="text-[10px] font-mono text-zinc-400">From</span>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-zinc-500 font-medium mb-1">Postal Hub</label>
+                    <select
+                      value={pickupAreaId}
+                      onChange={(e) => setPickupAreaId(e.target.value)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900 font-medium text-zinc-800"
+                    >
+                      {areas.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.postalCode} — {a.name} ({a.zone.name})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-zinc-500 font-medium mb-1">Street Address</label>
+                    <input
+                      type="text"
+                      required
+                      value={pickupAddress}
+                      onChange={(e) => setPickupAddress(e.target.value)}
+                      placeholder="e.g. Unit 402, Trade Tower, Connaught Pl"
+                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Order Category</label>
-                  <select
-                    value={orderType}
-                    onChange={(e) => setOrderType(e.target.value as 'B2B' | 'B2C')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
-                  >
-                    <option value="B2C">B2C (Retail)</option>
-                    <option value="B2B">B2B (Enterprise)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Payment Method</label>
-                  <select
-                    value={paymentType}
-                    onChange={(e) => setPaymentType(e.target.value as 'PREPAID' | 'COD')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
-                  >
-                    <option value="PREPAID">Prepaid</option>
-                    <option value="COD">Cash On Delivery (COD)</option>
-                  </select>
+
+                {/* Drop Area */}
+                <div className="p-4 rounded-xl bg-zinc-50/60 border border-zinc-200/70 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-zinc-800">Destination / Drop Point</label>
+                    <span className="text-[10px] font-mono text-zinc-400">To</span>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-zinc-500 font-medium mb-1">Postal Hub</label>
+                    <select
+                      value={dropAreaId}
+                      onChange={(e) => setDropAreaId(e.target.value)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900 font-medium text-zinc-800"
+                    >
+                      {areas.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.postalCode} — {a.name} ({a.zone.name})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-zinc-500 font-medium mb-1">Street Address</label>
+                    <input
+                      type="text"
+                      required
+                      value={dropAddress}
+                      onChange={(e) => setDropAddress(e.target.value)}
+                      placeholder="e.g. 77 Green Park Lane, Indiranagar"
+                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* LIVE RATE PREVIEW PANEL */}
-            <div className="bg-indigo-50/50 border border-indigo-200 p-5 rounded-xl space-y-3">
-              <div className="flex items-center space-x-1.5 text-indigo-900 font-bold text-sm">
-                <Calculator className="h-5 w-5 text-indigo-600" />
-                <span>Live Calculated Charge Breakdown</span>
+            {/* Step 2: Dimensions & Metrics */}
+            <div className="space-y-3">
+              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center">
+                <Layers className="w-3.5 h-3.5 mr-1.5 text-zinc-500" />
+                2. Cargo Dimensions & Mass
+              </span>
+
+              <div className="p-4 rounded-xl bg-zinc-50/60 border border-zinc-200/70 space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">Length (cm)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={length}
+                      onChange={(e) => setLength(parseInt(e.target.value) || 0)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">Width (cm)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={width}
+                      onChange={(e) => setWidth(parseInt(e.target.value) || 0)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">Height (cm)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={height}
+                      onChange={(e) => setHeight(parseInt(e.target.value) || 0)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">Actual Mass (kg)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      required
+                      value={actualWeight}
+                      onChange={(e) => setActualWeight(parseFloat(e.target.value) || 0)}
+                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">Service Tier</label>
+                    <select
+                      value={orderType}
+                      onChange={(e) => setOrderType(e.target.value as 'B2B' | 'B2C')}
+                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900 font-medium"
+                    >
+                      <option value="B2C">B2C Retail Dispatch</option>
+                      <option value="B2B">B2B Commercial Freight</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">Payment Method</label>
+                    <select
+                      value={paymentType}
+                      onChange={(e) => setPaymentType(e.target.value as 'PREPAID' | 'COD')}
+                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900 font-medium"
+                    >
+                      <option value="PREPAID">Prepaid Account</option>
+                      <option value="COD">Cash on Delivery (COD)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
-              {previewError && <p className="text-red-600 text-xs font-semibold">{previewError}</p>}
+            </div>
+
+            {/* Step 3: Live Rate Quote Breakdown */}
+            <div className="p-5 rounded-2xl bg-zinc-900 text-white shadow-xl shadow-zinc-900/10 space-y-3">
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+                <div className="flex items-center space-x-2">
+                  <Calculator className="w-4 h-4 text-indigo-400" />
+                  <span className="text-xs font-bold tracking-tight">Algorithmic Rate Calculation</span>
+                </div>
+                <span className="text-[10px] font-mono text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded">
+                  Divisor 5000
+                </span>
+              </div>
+
+              {previewError && (
+                <p className="text-rose-400 text-xs font-semibold">{previewError}</p>
+              )}
+
               {pricingPreview ? (
-                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs text-gray-700 border-t border-indigo-200/60 pt-2.5">
-                  <div className="flex justify-between">
-                    <span>Volumetric Weight:</span>
-                    <strong className="text-gray-900">{pricingPreview.volumetricWeight.toFixed(2)} kg</strong>
+                <div className="space-y-2.5 text-xs text-zinc-300">
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="flex justify-between p-2 rounded-lg bg-zinc-800/50">
+                      <span className="text-zinc-400">Volumetric Wt:</span>
+                      <span className="font-mono font-bold text-white">{pricingPreview.volumetricWeight.toFixed(2)} kg</span>
+                    </div>
+                    <div className="flex justify-between p-2 rounded-lg bg-zinc-800/50">
+                      <span className="text-zinc-400">Billable Charge Wt:</span>
+                      <span className="font-mono font-bold text-white">{pricingPreview.chargeableWeight.toFixed(2)} kg</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Chargeable Weight:</span>
-                    <strong className="text-gray-900">{pricingPreview.chargeableWeight.toFixed(2)} kg</strong>
+
+                  <div className="flex justify-between text-xs pt-1">
+                    <span className="text-zinc-400">Base & distance rate:</span>
+                    <span className="font-mono">₹{pricingPreview.deliveryCharge.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Route base & rate charge:</span>
-                    <strong className="text-gray-900">₹{pricingPreview.deliveryCharge.toFixed(2)}</strong>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>COD Fee:</span>
-                    <strong className="text-gray-900">₹{pricingPreview.codSurcharge.toFixed(2)}</strong>
-                  </div>
-                  <div className="flex justify-between col-span-2 text-sm font-bold text-indigo-900 border-t border-indigo-200 pt-2">
-                    <span>Total Billable Cost:</span>
-                    <span>₹{pricingPreview.totalCharge.toFixed(2)}</span>
+                  {pricingPreview.codSurcharge > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-zinc-400">COD Surcharge Fee:</span>
+                      <span className="font-mono text-amber-400">+₹{pricingPreview.codSurcharge.toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center pt-3 border-t border-zinc-800 text-sm font-bold text-white">
+                    <span>Total Estimated Invoice:</span>
+                    <span className="text-xl font-black text-emerald-400 font-mono">
+                      ₹{pricingPreview.totalCharge.toFixed(2)}
+                    </span>
                   </div>
                 </div>
               ) : (
-                <p className="text-gray-400 text-xs">Fill out pickup and destination zones to estimate charges.</p>
+                <p className="text-xs text-zinc-500 py-2">Select origin and destination hubs above to load the live rate card.</p>
               )}
             </div>
 
             <button
               type="submit"
               disabled={bookingLoading || !pricingPreview}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-indigo-100 disabled:opacity-50 transition"
+              className="w-full bg-zinc-900 text-white py-3.5 rounded-xl text-xs sm:text-sm font-bold hover:bg-zinc-800 active:scale-[0.99] disabled:opacity-50 transition shadow-lg shadow-zinc-900/10 flex items-center justify-center space-x-2"
             >
-              {bookingLoading ? 'Processing Booking...' : 'Confirm Shipment Booking'}
+              <span>{bookingLoading ? 'Initiating Dispatch Protocol...' : 'Confirm Shipment Booking'}</span>
+              {!bookingLoading && <ArrowRight className="w-4 h-4 text-zinc-400" />}
             </button>
           </form>
         </div>
       )}
 
       {/* ==================================================== */}
-      {/* HISTORY TAB CONTENT */}
+      {/* 4. ORDER HISTORY VIEW */}
       {/* ==================================================== */}
       {activeSubTab === 'history' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
-          
-          {/* History List Table */}
-          <div className={`${selectedOrder ? 'lg:col-span-2' : 'lg:col-span-3'} bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4`}>
-            <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-              <div className="flex items-center space-x-2">
-                <FileSpreadsheet className="h-5 w-5 text-indigo-600" />
-                <h2 className="text-lg font-bold text-gray-800 font-sans">Booking History Log</h2>
+          {/* Main Table Column */}
+          <div className={`${selectedOrder ? 'lg:col-span-2' : 'lg:col-span-3'} bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-4`}>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-zinc-100 gap-3">
+              <div className="flex items-center space-x-2.5">
+                <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
+                <h2 className="text-base font-bold text-zinc-900">Consignment Audit Ledger</h2>
               </div>
-              <button
-                onClick={fetchOrders}
-                className="text-xs text-indigo-600 font-bold hover:underline"
-              >
-                Refresh Log
-              </button>
+              <div className="flex items-center space-x-3 w-full sm:w-auto">
+                <div className="relative flex-1 sm:flex-initial">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-zinc-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by ID, Hub, Status..."
+                    className="pl-8 pr-3 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg w-full sm:w-56 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                  />
+                </div>
+                <button
+                  onClick={fetchOrders}
+                  className="p-2 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 border border-zinc-200/80 transition"
+                  title="Refresh Orders"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="min-w-full text-xs text-left text-gray-600">
-                <thead className="bg-gray-50 text-gray-700 uppercase font-semibold">
+              <table className="min-w-full text-xs text-left">
+                <thead className="bg-zinc-50/75 text-zinc-500 font-bold uppercase text-[10px] tracking-wider border-y border-zinc-100">
                   <tr>
-                    <th className="py-2.5 px-3">Order ID</th>
-                    <th className="py-2.5 px-3">Pickup → Destination</th>
-                    <th className="py-2.5 px-3">Category</th>
-                    <th className="py-2.5 px-3">Cost</th>
-                    <th className="py-2.5 px-3">Status</th>
-                    <th className="py-2.5 px-3 text-right">Action</th>
+                    <th className="py-3 px-3">Order Token</th>
+                    <th className="py-3 px-3">Routing (Origin → Dest)</th>
+                    <th className="py-3 px-3">Tier</th>
+                    <th className="py-3 px-3">Invoice</th>
+                    <th className="py-3 px-3">Status</th>
+                    <th className="py-3 px-3 text-right">Inspect</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {orders.length === 0 ? (
+                <tbody className="divide-y divide-zinc-100 text-zinc-700 font-medium">
+                  {filteredOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-10 text-gray-400">
-                        {/* SVG Empty State illustration */}
-                        <svg className="w-12 h-12 text-gray-300 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                        </svg>
-                        <p className="font-semibold text-gray-500 text-sm">No shipments booked yet</p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">Book your first parcel route using the "Book Delivery" tab above.</p>
+                      <td colSpan={6} className="text-center py-12 text-zinc-400">
+                        <Package className="w-10 h-10 text-zinc-300 mx-auto mb-2" />
+                        <p className="font-bold text-zinc-600 text-xs">No consignments found</p>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">Place a new shipment using the "Create Booking" view.</p>
                       </td>
                     </tr>
                   ) : (
-                    orders.map((o) => (
-                      <tr key={o.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="py-3 px-3 font-mono font-bold text-gray-900">
-                          {o.id.split('-')[0]}
+                    filteredOrders.map((o) => (
+                      <tr key={o.id} className="hover:bg-zinc-50/70 transition-colors">
+                        <td className="py-3 px-3 font-mono font-bold text-zinc-900">
+                          #{o.id.split('-')[0]}
+                        </td>
+                        <td className="py-3 px-3 font-semibold text-zinc-800">
+                          {o.pickupArea.name} <span className="text-zinc-400 font-normal">→</span> {o.dropArea.name}
                         </td>
                         <td className="py-3 px-3">
-                          {o.pickupArea.name} → {o.dropArea.name}
+                          <span className="text-[10px] font-bold text-zinc-600 bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200/50">
+                            {o.orderType}
+                          </span>
                         </td>
-                        <td className="py-3 px-3 uppercase text-gray-500 font-medium">
-                          {o.orderType}
-                        </td>
-                        <td className="py-3 px-3 font-bold text-gray-900">
+                        <td className="py-3 px-3 font-bold font-mono text-zinc-900">
                           ₹{o.totalCharge.toFixed(2)}
                         </td>
                         <td className="py-3 px-3">{getStatusBadge(o.status)}</td>
                         <td className="py-3 px-3 text-right">
                           <button
                             onClick={() => fetchOrderDetails(o.id)}
-                            className="bg-gray-100 text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 px-2 py-1 rounded font-bold text-[10px] inline-flex items-center space-x-1.5 transition"
+                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-zinc-700 bg-zinc-100 hover:bg-zinc-900 hover:text-white transition"
                           >
-                            <Eye className="h-3.5 w-3.5" />
-                            <span>Track Package</span>
+                            <span>Inspect</span>
+                            <ChevronRight className="w-3 h-3" />
                           </button>
                         </td>
                       </tr>
@@ -655,107 +771,119 @@ export default function CustomerDashboard() {
             </div>
           </div>
 
-          {/* Active Tracker details side panel */}
+          {/* Active Order Details Panel */}
           {selectedOrder && (
-            <div className="lg:col-span-1 bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-6 animate-fadeIn">
-              
-              <div>
-                <h3 className="text-base font-extrabold text-gray-800 border-b pb-2 mb-3 flex justify-between items-center">
-                  <span>Track Order #{selectedOrder.id.split('-')[0]}</span>
-                  <button
-                    onClick={() => setSelectedOrder(null)}
-                    className="text-xs text-gray-400 hover:text-gray-600 font-bold"
-                  >
-                    Close
-                  </button>
-                </h3>
-
-                <div className="space-y-2.5 text-xs text-gray-700 leading-relaxed">
-                  <p>
-                    <strong>Addresses:</strong> <br />
-                    Pickup: {selectedOrder.pickupAddress} ({selectedOrder.pickupArea.name}) <br />
-                    Drop: {selectedOrder.dropAddress} ({selectedOrder.dropArea.name})
-                  </p>
-                  <p>
-                    <strong>Measurements:</strong> <br />
-                    Dimensions: {selectedOrder.length}x{selectedOrder.width}x{selectedOrder.height} cm <br />
-                    Weight: {selectedOrder.actualWeight} kg (Volumetric: {selectedOrder.volumetricWeight.toFixed(2)} kg)
-                  </p>
-                  <p>
-                    <strong>Cost breakdown:</strong> <br />
-                    Charge: <strong>₹{selectedOrder.totalCharge.toFixed(2)}</strong> ({selectedOrder.paymentType})
-                  </p>
-                  <p>
-                    <strong>Current status:</strong> {getStatusBadge(selectedOrder.status)}
-                  </p>
-                  <p>
-                    <strong>Courier executive:</strong>{' '}
-                    <span className="font-semibold text-gray-900">
-                      {selectedOrder.agent ? selectedOrder.agent.user.name : 'Awaiting assignment...'}
-                    </span>
-                  </p>
+            <div className="lg:col-span-1 bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-6 animate-fadeIn self-start">
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs font-bold text-zinc-900 font-mono">
+                    #{selectedOrder.id.split('-')[0]}
+                  </span>
+                  {getStatusBadge(selectedOrder.status)}
                 </div>
-
-                {/* Reschedule trigger form on FAILED */}
-                {selectedOrder.status === 'FAILED' && (
-                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl space-y-3">
-                    <div className="flex items-center space-x-2 text-red-800 font-bold text-sm">
-                      <AlertTriangle className="h-5 w-5 text-red-500" />
-                      <span>Delivery Failed</span>
-                    </div>
-                    <p className="text-[11px] text-red-700 font-medium leading-relaxed">
-                      We were unable to complete the delivery attempt. Please schedule a new delivery date. We will assign a fresh available agent.
-                    </p>
-                    <div className="flex flex-col space-y-2">
-                      <input
-                        type="date"
-                        required
-                        min={new Date().toISOString().split('T')[0]}
-                        value={rescheduleDate}
-                        onChange={(e) => setRescheduleDate(e.target.value)}
-                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-xs"
-                      />
-                      <button
-                        onClick={handleReschedule}
-                        disabled={!rescheduleDate}
-                        className="bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 rounded-lg text-xs transition shadow"
-                      >
-                        Reschedule attempt
-                      </button>
-                    </div>
-                    {rescheduleSuccess && <p className="text-green-700 text-xs font-semibold">{rescheduleSuccess}</p>}
-                    {rescheduleError && <p className="text-red-700 text-xs font-semibold">{rescheduleError}</p>}
-                  </div>
-                )}
+                <button
+                  onClick={() => setSelectedOrder(null)}
+                  className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              {/* Timeline Audits */}
-              <div className="border-t pt-4">
-                <h4 className="text-xs font-bold text-gray-700 uppercase mb-2 flex items-center space-x-1.5">
-                  <Compass className="h-4 w-4 text-indigo-600" />
-                  <span>Delivery Journey Stages</span>
-                </h4>
-                <div className="relative border-l pl-3 ml-1.5 space-y-4 text-xs">
+              {/* Waybill Card */}
+              <div className="space-y-3 text-xs">
+                <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-2">
+                  <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Waypoint Route</div>
+                  <div className="space-y-1">
+                    <p className="text-zinc-600">
+                      <strong className="text-zinc-900">Pickup:</strong> {selectedOrder.pickupAddress} ({selectedOrder.pickupArea.name})
+                    </p>
+                    <p className="text-zinc-600">
+                      <strong className="text-zinc-900">Drop:</strong> {selectedOrder.dropAddress} ({selectedOrder.dropArea.name})
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="p-2.5 rounded-lg border border-zinc-200/70 bg-zinc-50">
+                    <span className="text-zinc-400 block text-[10px] font-bold uppercase">Dimensions</span>
+                    <span className="font-mono font-bold text-zinc-800">
+                      {selectedOrder.length}×{selectedOrder.width}×{selectedOrder.height} cm
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-lg border border-zinc-200/70 bg-zinc-50">
+                    <span className="text-zinc-400 block text-[10px] font-bold uppercase">Mass</span>
+                    <span className="font-mono font-bold text-zinc-800">{selectedOrder.actualWeight} kg</span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-xl border border-zinc-200/70 bg-zinc-50 flex items-center justify-between">
+                  <span className="text-zinc-500 font-semibold">Assigned Courier:</span>
+                  <span className="font-bold text-zinc-900">
+                    {selectedOrder.agent ? selectedOrder.agent.user.name : 'Awaiting Hub Match...'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Reschedule Flow if status is FAILED */}
+              {selectedOrder.status === 'FAILED' && (
+                <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs space-y-3">
+                  <div className="flex items-center space-x-2 text-rose-800 font-bold">
+                    <AlertTriangle className="w-4 h-4 text-rose-600" />
+                    <span>Attempt Unsuccessful</span>
+                  </div>
+                  <p className="text-[11px] text-rose-700 leading-relaxed">
+                    The delivery executive was unable to complete handover. Please select a reschedule date to trigger auto-reassignment.
+                  </p>
+                  <div className="space-y-2">
+                    <input
+                      type="date"
+                      required
+                      min={new Date().toISOString().split('T')[0]}
+                      value={rescheduleDate}
+                      onChange={(e) => setRescheduleDate(e.target.value)}
+                      className="w-full px-3 py-1.5 bg-white border border-rose-200 rounded-lg text-xs"
+                    />
+                    <button
+                      onClick={handleReschedule}
+                      disabled={!rescheduleDate}
+                      className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition"
+                    >
+                      Authorize Reschedule
+                    </button>
+                  </div>
+                  {rescheduleSuccess && <p className="text-emerald-700 font-semibold text-[11px]">{rescheduleSuccess}</p>}
+                  {rescheduleError && <p className="text-rose-700 font-semibold text-[11px]">{rescheduleError}</p>}
+                </div>
+              )}
+
+              {/* Immutable Timeline */}
+              <div className="pt-2 border-t border-zinc-100">
+                <div className="flex items-center space-x-1.5 text-xs font-bold text-zinc-900 mb-4">
+                  <Compass className="w-4 h-4 text-indigo-600" />
+                  <span>Immutable Audit Trail</span>
+                </div>
+
+                <div className="relative pl-4 space-y-4 border-l-2 border-zinc-100 ml-2">
                   {timeline.length === 0 ? (
-                    <p className="text-gray-400 text-[10px]">Loading timeline stages...</p>
+                    <p className="text-zinc-400 text-xs">Awaiting log entries...</p>
                   ) : (
                     timeline.map((item) => (
-                      <div key={item.id} className="relative">
-                        <div className="absolute -left-[18px] top-1 bg-white border border-indigo-600 rounded-full h-2 w-2"></div>
-                        <div className="flex justify-between font-bold text-gray-900 text-[10px]">
-                          <span>{item.status}</span>
-                          <span className="text-gray-400 font-normal">{new Date(item.timestamp).toLocaleTimeString()}</span>
+                      <div key={item.id} className="relative group">
+                        <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-zinc-900 border-2 border-white ring-2 ring-zinc-100"></div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-bold text-zinc-900 uppercase tracking-wide">{item.status}</span>
+                          <span className="text-[10px] font-mono text-zinc-400">
+                            {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
-                        <p className="text-gray-500 italic mt-0.5 text-[11px]">{item.notes}</p>
+                        <p className="text-[11px] text-zinc-500 mt-0.5 leading-relaxed">{item.notes}</p>
                       </div>
                     ))
                   )}
                 </div>
               </div>
-
             </div>
           )}
-
         </div>
       )}
     </div>
