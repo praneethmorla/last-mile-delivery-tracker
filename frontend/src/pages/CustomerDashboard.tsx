@@ -101,6 +101,27 @@ export default function CustomerDashboard() {
   const [actualWeight, setActualWeight] = useState(1);
   const [orderType, setOrderType] = useState<'B2B' | 'B2C'>('B2C');
   const [paymentType, setPaymentType] = useState<'PREPAID' | 'COD'>('PREPAID');
+  const [sizePreset, setSizePreset] = useState<'small' | 'medium' | 'large' | 'custom'>('small');
+
+  const handleSelectPreset = (preset: 'small' | 'medium' | 'large' | 'custom') => {
+    setSizePreset(preset);
+    if (preset === 'small') {
+      setLength(10);
+      setWidth(10);
+      setHeight(10);
+      setActualWeight(1);
+    } else if (preset === 'medium') {
+      setLength(25);
+      setWidth(20);
+      setHeight(15);
+      setActualWeight(3);
+    } else if (preset === 'large') {
+      setLength(40);
+      setWidth(30);
+      setHeight(20);
+      setActualWeight(7);
+    }
+  };
 
   // Preview State
   const [pricingPreview, setPricingPreview] = useState<any>(null);
@@ -238,6 +259,7 @@ export default function CustomerDashboard() {
 
       setPickupAddress('');
       setDropAddress('');
+      setSizePreset('small');
       setPricingPreview(null);
       await fetchOrders();
       
@@ -370,646 +392,601 @@ export default function CustomerDashboard() {
         </div>
       )}
 
-      {/* Main Responsive Grid: Dedicated Left Side Navigation & Right Side Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* LEFT COLUMN: Customer Navigation & Snapshot Metrics */}
-        <div className="lg:col-span-4 xl:col-span-3 space-y-4 lg:sticky lg:top-20">
-          {/* 1. Primary Left Navigation Menu */}
-          <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/60">
-              <div className="flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Customer Actions</span>
-              </div>
-              <span className="text-[10px] font-mono font-bold bg-zinc-100 text-zinc-600 px-1.5 py-0.5 rounded border border-zinc-200">
-                Portal
-              </span>
-            </div>
-
-            <div className="p-2 space-y-1.5">
-              {/* Left Action: Place Order */}
-              <button
-                type="button"
-                onClick={() => setActiveSubTab('booking')}
-                className={`w-full text-left p-3 rounded-xl transition-all flex items-center space-x-3 group ${
-                  activeSubTab === 'booking'
-                    ? 'bg-zinc-900 text-white shadow-md shadow-zinc-900/15'
-                    : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900'
-                }`}
-              >
-                <div
-                  className={`p-2 rounded-lg flex-shrink-0 transition-colors ${
-                    activeSubTab === 'booking'
-                      ? 'bg-zinc-800 text-indigo-400'
-                      : 'bg-zinc-100 text-zinc-600 group-hover:bg-zinc-200/70 group-hover:text-zinc-900'
-                  }`}
-                >
-                  <PackagePlus className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold tracking-tight">Place Order</span>
-                    {activeSubTab === 'booking' && (
-                      <span className="text-[9px] font-mono bg-indigo-500/20 text-indigo-300 font-bold px-1.5 py-0.2 rounded border border-indigo-400/30">
-                        ACTIVE
-                      </span>
-                    )}
-                  </div>
-                  <p
-                    className={`text-[11px] mt-0.5 truncate ${
-                      activeSubTab === 'booking' ? 'text-zinc-400' : 'text-zinc-400'
-                    }`}
-                  >
-                    New booking & dispatch
-                  </p>
-                </div>
-              </button>
-
-              {/* Left Action: Order History */}
-              <button
-                type="button"
-                onClick={() => setActiveSubTab('history')}
-                className={`w-full text-left p-3 rounded-xl transition-all flex items-center space-x-3 group ${
-                  activeSubTab === 'history'
-                    ? 'bg-zinc-900 text-white shadow-md shadow-zinc-900/15'
-                    : 'text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900'
-                }`}
-              >
-                <div
-                  className={`p-2 rounded-lg flex-shrink-0 transition-colors ${
-                    activeSubTab === 'history'
-                      ? 'bg-zinc-800 text-indigo-400'
-                      : 'bg-zinc-100 text-zinc-600 group-hover:bg-zinc-200/70 group-hover:text-zinc-900'
-                  }`}
-                >
-                  <History className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold tracking-tight">Order History</span>
-                    <span
-                      className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full ${
-                        activeSubTab === 'history'
-                          ? 'bg-zinc-800 text-zinc-200 border border-zinc-700'
-                          : 'bg-zinc-200/80 text-zinc-700'
-                      }`}
-                    >
-                      {orders.length}
-                    </span>
-                  </div>
-                  <p
-                    className={`text-[11px] mt-0.5 truncate ${
-                      activeSubTab === 'history' ? 'text-zinc-400' : 'text-zinc-400'
-                    }`}
-                  >
-                    Track status & audit logs
-                  </p>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* 2. Left Snapshot Analytics */}
-          <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-4 space-y-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block px-0.5">
-              Account Overview
-            </span>
-
-            <div className="p-3 rounded-xl bg-zinc-50/70 border border-zinc-200/60 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] text-zinc-400 font-bold uppercase block">Logistics Spend</span>
-                <span className="text-base font-extrabold text-zinc-900 font-mono tracking-tight">
-                  ₹{totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center">
-                <Coins className="w-4 h-4" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div className="p-2.5 rounded-xl bg-zinc-50/70 border border-zinc-200/60">
-                <div className="flex items-center justify-between text-zinc-400 mb-0.5">
-                  <span className="text-[10px] font-bold uppercase">Active</span>
-                  <Truck className="w-3.5 h-3.5 text-amber-500" />
-                </div>
-                <div className="flex items-baseline space-x-1">
-                  <span className="text-lg font-black text-zinc-900">{activeCount}</span>
-                  <span className="text-[9px] text-amber-600 font-medium">on route</span>
-                </div>
-              </div>
-
-              <div className="p-2.5 rounded-xl bg-zinc-50/70 border border-zinc-200/60">
-                <div className="flex items-center justify-between text-zinc-400 mb-0.5">
-                  <span className="text-[10px] font-bold uppercase">Delivered</span>
-                  <Boxes className="w-3.5 h-3.5 text-emerald-500" />
-                </div>
-                <div className="flex items-baseline space-x-1">
-                  <span className="text-lg font-black text-zinc-900">{completedCount}</span>
-                  <span className="text-[9px] text-emerald-600 font-medium">verified</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Left System Heuristics Note */}
-          <div className="p-4 rounded-2xl bg-zinc-900 text-white shadow-sm space-y-2">
-            <div className="flex items-center space-x-2">
-              <Sparkles className="w-4 h-4 text-indigo-400" />
-              <span className="text-xs font-bold tracking-tight">Autonomous Dispatch</span>
-            </div>
-            <p className="text-[11px] text-zinc-400 leading-relaxed">
-              Consignments are automatically evaluated via <span className="text-indigo-300 font-mono text-[10px]">(L×W×H)/5000</span> and assigned to the nearest courier agent by proximity heuristics.
-            </p>
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN: Active Workspace (Place Order or Order History) */}
-        <div className="lg:col-span-8 xl:col-span-9 space-y-6 min-w-0">
-          {/* Workspace Title Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-5 rounded-2xl border border-zinc-200/80 shadow-sm gap-4">
-            <div>
-              <div className="flex items-center space-x-2">
-                <h1 className="text-xl font-bold tracking-tight text-zinc-900">
-                  {activeSubTab === 'booking' ? 'Place Consignment Order' : 'Order History & Audit Ledger'}
-                </h1>
-                <span className="text-[10px] font-mono bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded border border-zinc-200 font-bold uppercase">
-                  {activeSubTab === 'booking' ? 'New Dispatch' : 'Immutable Records'}
-                </span>
-              </div>
-              <p className="text-xs text-zinc-500 mt-1 font-medium">
-                {activeSubTab === 'booking'
-                  ? 'Configure origin, destination, cargo metrics, and auto-dispatch the nearest courier agent.'
-                  : 'Inspect live tracking statuses, delivery waypoints, courier assignments, and reschedule if required.'}
-              </p>
-            </div>
-
-            {activeSubTab === 'history' ? (
-              <button
-                type="button"
-                onClick={() => setActiveSubTab('booking')}
-                className="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-zinc-900 hover:bg-zinc-800 shadow-sm transition"
-              >
-                <PackagePlus className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Place New Order</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setActiveSubTab('history')}
-                className="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200/80 transition"
-              >
-                <History className="w-3.5 h-3.5 text-zinc-500" />
-                <span>View History ({orders.length})</span>
-              </button>
-            )}
-          </div>
-
       {/* ==================================================== */}
-      {/* 3. CREATE BOOKING VIEW */}
+      {/* 1. SIMPLIFIED PLACE ORDER VIEW */}
       {/* ==================================================== */}
       {activeSubTab === 'booking' && (
-        <div className="w-full bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 sm:p-8 animate-fadeIn">
-          <div className="flex items-center space-x-3 pb-5 mb-6 border-b border-zinc-100">
-            <div className="w-9 h-9 rounded-xl bg-zinc-900 text-white flex items-center justify-center">
-              <Package className="w-4 h-4 text-indigo-400" />
-            </div>
+        <div className="max-w-4xl mx-auto space-y-6 animate-fadeIn">
+          {/* Page Title & Subtitle */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
-              <h2 className="text-base font-bold text-zinc-900 tracking-tight">Consignment Specifications</h2>
-              <p className="text-xs text-zinc-400">Fill in the dispatch route and cargo metrics for automated price discovery.</p>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900">Place an Order</h1>
+              <p className="text-xs text-zinc-500 mt-1">
+                Enter your pickup and delivery points to book on-demand courier dispatch.
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setActiveSubTab('history')}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-600 bg-white border border-zinc-200 hover:bg-zinc-50 transition shadow-sm"
+            >
+              <History className="w-3.5 h-3.5 text-zinc-500" />
+              <span>Order History ({orders.length})</span>
+            </button>
           </div>
 
-          <form onSubmit={handlePlaceOrder} className="space-y-6">
-            {/* Step 1: Route Coordinates */}
-            <div className="space-y-3">
-              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center">
-                <MapPin className="w-3.5 h-3.5 mr-1.5 text-zinc-500" />
-                1. Routing & Hub Assignment
-              </span>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Pickup Area */}
-                <div className="p-4 rounded-xl bg-zinc-50/60 border border-zinc-200/70 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-zinc-800">Origin / Pickup Point</label>
-                    <span className="text-[10px] font-mono text-zinc-400">From</span>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] text-zinc-500 font-medium mb-1">Postal Hub</label>
-                    <select
-                      value={pickupAreaId}
-                      onChange={(e) => setPickupAreaId(e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900 font-medium text-zinc-800"
-                    >
-                      {areas.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.postalCode} — {a.name} ({a.zone.name})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] text-zinc-500 font-medium mb-1">Street Address</label>
-                    <input
-                      type="text"
-                      required
-                      value={pickupAddress}
-                      onChange={(e) => setPickupAddress(e.target.value)}
-                      placeholder="e.g. Unit 402, Trade Tower, Connaught Pl"
-                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                    />
-                  </div>
+          <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+            {/* Left Column: Pickup, Drop, and Package Size (md:col-span-7) */}
+            <div className="md:col-span-7 space-y-5">
+              
+              {/* Card 1: Route & Waypoints */}
+              <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-5 sm:p-6 space-y-4">
+                <div className="flex items-center space-x-2 text-xs font-bold text-zinc-900 pb-2 border-b border-zinc-100">
+                  <MapPin className="w-4 h-4 text-indigo-600" />
+                  <span>Pickup & Dropoff Locations</span>
                 </div>
 
-                {/* Drop Area */}
-                <div className="p-4 rounded-xl bg-zinc-50/60 border border-zinc-200/70 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-zinc-800">Destination / Drop Point</label>
-                    <span className="text-[10px] font-mono text-zinc-400">To</span>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] text-zinc-500 font-medium mb-1">Postal Hub</label>
-                    <select
-                      value={dropAreaId}
-                      onChange={(e) => setDropAreaId(e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900 font-medium text-zinc-800"
-                    >
-                      {areas.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.postalCode} — {a.name} ({a.zone.name})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] text-zinc-500 font-medium mb-1">Street Address</label>
-                    <input
-                      type="text"
-                      required
-                      value={dropAddress}
-                      onChange={(e) => setDropAddress(e.target.value)}
-                      placeholder="e.g. 77 Green Park Lane, Indiranagar"
-                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                    />
-                  </div>
+                {/* Pickup Address */}
+                <div className="space-y-1.5">
+                  <label className="flex items-center text-xs font-bold text-zinc-700">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>
+                    Pickup Location (From)
+                  </label>
+                  <select
+                    value={pickupAreaId}
+                    onChange={(e) => setPickupAreaId(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 font-medium text-zinc-800"
+                  >
+                    {areas.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.postalCode} — {a.name} ({a.zone.name})
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    required
+                    value={pickupAddress}
+                    onChange={(e) => setPickupAddress(e.target.value)}
+                    placeholder="Enter street address, building, floor or flat no."
+                    className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                  />
+                </div>
+
+                <div className="relative py-0.5">
+                  <div className="border-t border-dashed border-zinc-200"></div>
+                </div>
+
+                {/* Drop Address */}
+                <div className="space-y-1.5">
+                  <label className="flex items-center text-xs font-bold text-zinc-700">
+                    <span className="w-2 h-2 rounded-full bg-indigo-600 mr-2"></span>
+                    Delivery Location (To)
+                  </label>
+                  <select
+                    value={dropAreaId}
+                    onChange={(e) => setDropAreaId(e.target.value)}
+                    className="w-full px-3 py-2 text-xs bg-zinc-50 border border-zinc-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-zinc-900 font-medium text-zinc-800"
+                  >
+                    {areas.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.postalCode} — {a.name} ({a.zone.name})
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    required
+                    value={dropAddress}
+                    onChange={(e) => setDropAddress(e.target.value)}
+                    placeholder="Enter destination street address, landmark, apartment"
+                    className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-zinc-900"
+                  />
                 </div>
               </div>
-            </div>
 
-            {/* Step 2: Dimensions & Metrics */}
-            <div className="space-y-3">
-              <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider flex items-center">
-                <Layers className="w-3.5 h-3.5 mr-1.5 text-zinc-500" />
-                2. Cargo Dimensions & Mass
-              </span>
-
-              <div className="p-4 rounded-xl bg-zinc-50/60 border border-zinc-200/70 space-y-4">
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">Length (cm)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      required
-                      value={length}
-                      onChange={(e) => setLength(parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">Width (cm)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      required
-                      value={width}
-                      onChange={(e) => setWidth(parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">Height (cm)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      required
-                      value={height}
-                      onChange={(e) => setHeight(parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                    />
-                  </div>
+              {/* Card 2: Package Size & Category */}
+              <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-5 sm:p-6 space-y-4">
+                <div className="flex items-center space-x-2 text-xs font-bold text-zinc-900 pb-2 border-b border-zinc-100">
+                  <Package className="w-4 h-4 text-indigo-600" />
+                  <span>Package Size</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-                  <div>
-                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">Actual Mass (kg)</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0.1"
-                      required
-                      value={actualWeight}
-                      onChange={(e) => setActualWeight(parseFloat(e.target.value) || 0)}
-                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">Service Tier</label>
-                    <select
-                      value={orderType}
-                      onChange={(e) => setOrderType(e.target.value as 'B2B' | 'B2C')}
-                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900 font-medium"
-                    >
-                      <option value="B2C">B2C Retail Dispatch</option>
-                      <option value="B2B">B2B Commercial Freight</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-zinc-700 mb-1">Payment Method</label>
-                    <select
-                      value={paymentType}
-                      onChange={(e) => setPaymentType(e.target.value as 'PREPAID' | 'COD')}
-                      className="w-full px-3 py-2 text-xs bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900 font-medium"
-                    >
-                      <option value="PREPAID">Prepaid Account</option>
-                      <option value="COD">Cash on Delivery (COD)</option>
-                    </select>
-                  </div>
+                {/* Preset Options */}
+                <div className="grid grid-cols-3 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPreset('small')}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      sizePreset === 'small'
+                        ? 'border-zinc-900 bg-zinc-900 text-white shadow-sm'
+                        : 'border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700'
+                    }`}
+                  >
+                    <span className="text-base block mb-0.5">📄</span>
+                    <span className="text-xs font-bold block">Small</span>
+                    <span className={`text-[10px] block mt-0.5 ${sizePreset === 'small' ? 'text-zinc-300' : 'text-zinc-400'}`}>
+                      Up to 1 kg
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPreset('medium')}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      sizePreset === 'medium'
+                        ? 'border-zinc-900 bg-zinc-900 text-white shadow-sm'
+                        : 'border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700'
+                    }`}
+                  >
+                    <span className="text-base block mb-0.5">📦</span>
+                    <span className="text-xs font-bold block">Medium</span>
+                    <span className={`text-[10px] block mt-0.5 ${sizePreset === 'medium' ? 'text-zinc-300' : 'text-zinc-400'}`}>
+                      Up to 3 kg
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPreset('large')}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      sizePreset === 'large'
+                        ? 'border-zinc-900 bg-zinc-900 text-white shadow-sm'
+                        : 'border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700'
+                    }`}
+                  >
+                    <span className="text-base block mb-0.5">💼</span>
+                    <span className="text-xs font-bold block">Large</span>
+                    <span className={`text-[10px] block mt-0.5 ${sizePreset === 'large' ? 'text-zinc-300' : 'text-zinc-400'}`}>
+                      Up to 7 kg
+                    </span>
+                  </button>
                 </div>
-              </div>
-            </div>
 
-            {/* Step 3: Live Rate Quote Breakdown */}
-            <div className="p-5 rounded-2xl bg-zinc-900 text-white shadow-xl shadow-zinc-900/10 space-y-3">
-              <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
-                <div className="flex items-center space-x-2">
-                  <Calculator className="w-4 h-4 text-indigo-400" />
-                  <span className="text-xs font-bold tracking-tight">Algorithmic Rate Calculation</span>
-                </div>
-                <span className="text-[10px] font-mono text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded">
-                  Divisor 5000
-                </span>
-              </div>
+                {/* Optional Custom Dimensions */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectPreset(sizePreset === 'custom' ? 'small' : 'custom')}
+                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center space-x-1"
+                  >
+                    <span>{sizePreset === 'custom' ? '− Use standard preset sizes' : '+ Enter custom dimensions / weight'}</span>
+                  </button>
 
-              {previewError && (
-                <p className="text-rose-400 text-xs font-semibold">{previewError}</p>
-              )}
-
-              {pricingPreview ? (
-                <div className="space-y-2.5 text-xs text-zinc-300">
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="flex justify-between p-2 rounded-lg bg-zinc-800/50">
-                      <span className="text-zinc-400">Volumetric Wt:</span>
-                      <span className="font-mono font-bold text-white">{pricingPreview.volumetricWeight.toFixed(2)} kg</span>
-                    </div>
-                    <div className="flex justify-between p-2 rounded-lg bg-zinc-800/50">
-                      <span className="text-zinc-400">Billable Charge Wt:</span>
-                      <span className="font-mono font-bold text-white">{pricingPreview.chargeableWeight.toFixed(2)} kg</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between text-xs pt-1">
-                    <span className="text-zinc-400">Base & distance rate:</span>
-                    <span className="font-mono">₹{pricingPreview.deliveryCharge.toFixed(2)}</span>
-                  </div>
-                  {pricingPreview.codSurcharge > 0 && (
-                    <div className="flex justify-between text-xs">
-                      <span className="text-zinc-400">COD Surcharge Fee:</span>
-                      <span className="font-mono text-amber-400">+₹{pricingPreview.codSurcharge.toFixed(2)}</span>
+                  {sizePreset === 'custom' && (
+                    <div className="mt-3 p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl grid grid-cols-4 gap-2 animate-fadeIn">
+                      <div>
+                        <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Length (cm)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={length}
+                          onChange={(e) => setLength(parseInt(e.target.value) || 1)}
+                          className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Width (cm)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={width}
+                          onChange={(e) => setWidth(parseInt(e.target.value) || 1)}
+                          className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Height (cm)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={height}
+                          onChange={(e) => setHeight(parseInt(e.target.value) || 1)}
+                          className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Mass (kg)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0.1"
+                          value={actualWeight}
+                          onChange={(e) => setActualWeight(parseFloat(e.target.value) || 0.1)}
+                          className="w-full px-2.5 py-1.5 text-xs bg-white border border-zinc-200 rounded-lg"
+                        />
+                      </div>
                     </div>
                   )}
+                </div>
 
-                  <div className="flex justify-between items-center pt-3 border-t border-zinc-800 text-sm font-bold text-white">
-                    <span>Total Estimated Invoice:</span>
-                    <span className="text-xl font-black text-emerald-400 font-mono">
-                      ₹{pricingPreview.totalCharge.toFixed(2)}
-                    </span>
+                {/* Payment Option & Service Tier */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-700 mb-1.5">Payment Method</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentType('PREPAID')}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold border transition ${
+                          paymentType === 'PREPAID'
+                            ? 'border-zinc-900 bg-zinc-900 text-white'
+                            : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
+                        }`}
+                      >
+                        Prepaid
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentType('COD')}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold border transition ${
+                          paymentType === 'COD'
+                            ? 'border-zinc-900 bg-zinc-900 text-white'
+                            : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
+                        }`}
+                      >
+                        Cash on Delivery
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-700 mb-1.5">Delivery Tier</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setOrderType('B2C')}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold border transition ${
+                          orderType === 'B2C'
+                            ? 'border-zinc-900 bg-zinc-900 text-white'
+                            : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
+                        }`}
+                      >
+                        Standard
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOrderType('B2B')}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold border transition ${
+                          orderType === 'B2B'
+                            ? 'border-zinc-900 bg-zinc-900 text-white'
+                            : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
+                        }`}
+                      >
+                        Express B2B
+                      </button>
+                    </div>
                   </div>
                 </div>
-              ) : (
-                <p className="text-xs text-zinc-500 py-2">Select origin and destination hubs above to load the live rate card.</p>
-              )}
+              </div>
+
             </div>
 
-            <button
-              type="submit"
-              disabled={bookingLoading || !pricingPreview}
-              className="w-full bg-zinc-900 text-white py-3.5 rounded-xl text-xs sm:text-sm font-bold hover:bg-zinc-800 active:scale-[0.99] disabled:opacity-50 transition shadow-lg shadow-zinc-900/10 flex items-center justify-center space-x-2"
-            >
-              <span>{bookingLoading ? 'Initiating Dispatch Protocol...' : 'Confirm Shipment Booking'}</span>
-              {!bookingLoading && <ArrowRight className="w-4 h-4 text-zinc-400" />}
-            </button>
+            {/* Right Column: Order Summary & Place Order Button (md:col-span-5) */}
+            <div className="md:col-span-5 space-y-4">
+              <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-5 sm:p-6 space-y-5 md:sticky md:top-20">
+                <h2 className="text-sm font-bold text-zinc-900 pb-3 border-b border-zinc-100 flex items-center justify-between">
+                  <span>Fare Summary</span>
+                  <span className="text-[10px] font-mono text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded">
+                    Live Rate
+                  </span>
+                </h2>
+
+                {previewError && (
+                  <p className="text-xs text-rose-500 font-semibold">{previewError}</p>
+                )}
+
+                {pricingPreview ? (
+                  <div className="space-y-3 text-xs">
+                    <div className="flex justify-between text-zinc-600">
+                      <span>Delivery Charge</span>
+                      <span className="font-semibold text-zinc-900 font-mono">
+                        ₹{pricingPreview.deliveryCharge.toFixed(2)}
+                      </span>
+                    </div>
+
+                    {pricingPreview.codSurcharge > 0 && (
+                      <div className="flex justify-between text-zinc-600">
+                        <span>Cash on Delivery Surcharge</span>
+                        <span className="font-semibold text-amber-600 font-mono">
+                          +₹{pricingPreview.codSurcharge.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="pt-3 border-t border-zinc-100 flex justify-between items-baseline">
+                      <span className="text-xs font-bold text-zinc-900">Total Price</span>
+                      <span className="text-2xl font-black text-emerald-600 font-mono">
+                        ₹{pricingPreview.totalCharge.toFixed(2)}
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-100 text-[11px] text-zinc-500 space-y-1">
+                      <div className="flex items-center space-x-1.5 font-semibold text-zinc-800">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        <span>Auto-Dispatch Enabled</span>
+                      </div>
+                      <p>Nearest available courier executive will be dispatched to the pickup address.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-xs text-zinc-400">
+                    Select origin and destination hubs to view live fare.
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={bookingLoading || !pricingPreview}
+                  className="w-full bg-zinc-900 text-white py-3.5 rounded-xl text-xs sm:text-sm font-bold hover:bg-zinc-800 active:scale-[0.99] disabled:opacity-50 transition shadow-sm flex items-center justify-center space-x-2"
+                >
+                  <span>{bookingLoading ? 'Dispatching Agent...' : 'Confirm & Place Order'}</span>
+                  {!bookingLoading && <ArrowRight className="w-4 h-4 text-zinc-400" />}
+                </button>
+              </div>
+            </div>
           </form>
         </div>
       )}
 
       {/* ==================================================== */}
-      {/* 4. ORDER HISTORY VIEW */}
+      {/* 2. ORDER HISTORY VIEW */}
       {/* ==================================================== */}
       {activeSubTab === 'history' && (
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 animate-fadeIn">
-          {/* Main Table Column */}
-          <div className={`${selectedOrder ? 'xl:col-span-7' : 'xl:col-span-12'} bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-4`}>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-zinc-100 gap-3">
-              <div className="flex items-center space-x-2.5">
-                <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
-                <h2 className="text-base font-bold text-zinc-900">Consignment Audit Ledger</h2>
+        <div className="space-y-6 animate-fadeIn">
+          {/* Top Performance Metrics Bento */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Total Logistics Spend</span>
+                <h3 className="text-2xl font-black text-zinc-900 tracking-tight">
+                  ₹{totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </h3>
+                <span className="text-[10px] text-zinc-500 font-medium">{orders.length} total shipments booked</span>
               </div>
-              <div className="flex items-center space-x-3 w-full sm:w-auto">
-                <div className="relative flex-1 sm:flex-initial">
-                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-zinc-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by ID, Hub, Status..."
-                    className="pl-8 pr-3 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg w-full sm:w-56 focus:outline-none focus:ring-1 focus:ring-zinc-900"
-                  />
-                </div>
-                <button
-                  onClick={fetchOrders}
-                  className="p-2 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 border border-zinc-200/80 transition"
-                  title="Refresh Orders"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </button>
+              <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                <Coins className="w-5 h-5" />
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-xs text-left">
-                <thead className="bg-zinc-50/75 text-zinc-500 font-bold uppercase text-[10px] tracking-wider border-y border-zinc-100">
-                  <tr>
-                    <th className="py-3 px-3">Order Token</th>
-                    <th className="py-3 px-3">Routing (Origin → Dest)</th>
-                    <th className="py-3 px-3">Tier</th>
-                    <th className="py-3 px-3">Invoice</th>
-                    <th className="py-3 px-3">Status</th>
-                    <th className="py-3 px-3 text-right">Inspect</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-100 text-zinc-700 font-medium">
-                  {filteredOrders.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="text-center py-12 text-zinc-400">
-                        <Package className="w-10 h-10 text-zinc-300 mx-auto mb-2" />
-                        <p className="font-bold text-zinc-600 text-xs">No consignments found</p>
-                        <p className="text-[11px] text-zinc-400 mt-0.5">Place a new shipment using the "Create Booking" view.</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredOrders.map((o) => (
-                      <tr key={o.id} className="hover:bg-zinc-50/70 transition-colors">
-                        <td className="py-3 px-3 font-mono font-bold text-zinc-900">
-                          #{o.id.split('-')[0]}
-                        </td>
-                        <td className="py-3 px-3 font-semibold text-zinc-800">
-                          {o.pickupArea.name} <span className="text-zinc-400 font-normal">→</span> {o.dropArea.name}
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className="text-[10px] font-bold text-zinc-600 bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200/50">
-                            {o.orderType}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 font-bold font-mono text-zinc-900">
-                          ₹{o.totalCharge.toFixed(2)}
-                        </td>
-                        <td className="py-3 px-3">{getStatusBadge(o.status)}</td>
-                        <td className="py-3 px-3 text-right">
-                          <button
-                            onClick={() => fetchOrderDetails(o.id)}
-                            className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-zinc-700 bg-zinc-100 hover:bg-zinc-900 hover:text-white transition"
-                          >
-                            <span>Inspect</span>
-                            <ChevronRight className="w-3 h-3" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Active Dispatches</span>
+                <h3 className="text-2xl font-black text-zinc-900 tracking-tight">{activeCount}</h3>
+                <span className="text-[10px] text-amber-600 font-medium flex items-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1 animate-pulse"></span>
+                  Live on route
+                </span>
+              </div>
+              <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600">
+                <Truck className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-zinc-200/80 shadow-sm flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Completed Orders</span>
+                <h3 className="text-2xl font-black text-zinc-900 tracking-tight">{completedCount}</h3>
+                <span className="text-[10px] text-emerald-600 font-medium">100% Verified Delivery</span>
+              </div>
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+                <Boxes className="w-5 h-5" />
+              </div>
             </div>
           </div>
 
-          {/* Active Order Details Panel */}
-          {selectedOrder && (
-            <div className="xl:col-span-5 bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-6 animate-fadeIn self-start">
-              <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs font-bold text-zinc-900 font-mono">
-                    #{selectedOrder.id.split('-')[0]}
-                  </span>
-                  {getStatusBadge(selectedOrder.status)}
-                </div>
-                <button
-                  onClick={() => setSelectedOrder(null)}
-                  className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Waybill Card */}
-              <div className="space-y-3 text-xs">
-                <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-2">
-                  <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Waypoint Route</div>
-                  <div className="space-y-1">
-                    <p className="text-zinc-600">
-                      <strong className="text-zinc-900">Pickup:</strong> {selectedOrder.pickupAddress} ({selectedOrder.pickupArea.name})
-                    </p>
-                    <p className="text-zinc-600">
-                      <strong className="text-zinc-900">Drop:</strong> {selectedOrder.dropAddress} ({selectedOrder.dropArea.name})
-                    </p>
+          {/* Consignment Audit Ledger & Inspector */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Orders Table */}
+            <div className={`${selectedOrder ? 'lg:col-span-7' : 'lg:col-span-12'} bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-4`}>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b border-zinc-100 gap-3">
+                <div className="flex items-center space-x-2.5">
+                  <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
+                  <div>
+                    <h2 className="text-base font-bold text-zinc-900">Consignment Audit Ledger</h2>
+                    <p className="text-xs text-zinc-400">Immutable ledger of all booked shipments.</p>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-2 text-[11px]">
-                  <div className="p-2.5 rounded-lg border border-zinc-200/70 bg-zinc-50">
-                    <span className="text-zinc-400 block text-[10px] font-bold uppercase">Dimensions</span>
-                    <span className="font-mono font-bold text-zinc-800">
-                      {selectedOrder.length}×{selectedOrder.width}×{selectedOrder.height} cm
-                    </span>
-                  </div>
-                  <div className="p-2.5 rounded-lg border border-zinc-200/70 bg-zinc-50">
-                    <span className="text-zinc-400 block text-[10px] font-bold uppercase">Mass</span>
-                    <span className="font-mono font-bold text-zinc-800">{selectedOrder.actualWeight} kg</span>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl border border-zinc-200/70 bg-zinc-50 flex items-center justify-between">
-                  <span className="text-zinc-500 font-semibold">Assigned Courier:</span>
-                  <span className="font-bold text-zinc-900">
-                    {selectedOrder.agent ? selectedOrder.agent.user.name : 'Awaiting Hub Match...'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Reschedule Flow if status is FAILED */}
-              {selectedOrder.status === 'FAILED' && (
-                <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs space-y-3">
-                  <div className="flex items-center space-x-2 text-rose-800 font-bold">
-                    <AlertTriangle className="w-4 h-4 text-rose-600" />
-                    <span>Attempt Unsuccessful</span>
-                  </div>
-                  <p className="text-[11px] text-rose-700 leading-relaxed">
-                    The delivery executive was unable to complete handover. Please select a reschedule date to trigger auto-reassignment.
-                  </p>
-                  <div className="space-y-2">
+                <div className="flex items-center space-x-2 w-full sm:w-auto">
+                  <div className="relative flex-1 sm:flex-initial">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-zinc-400" />
                     <input
-                      type="date"
-                      required
-                      min={new Date().toISOString().split('T')[0]}
-                      value={rescheduleDate}
-                      onChange={(e) => setRescheduleDate(e.target.value)}
-                      className="w-full px-3 py-1.5 bg-white border border-rose-200 rounded-lg text-xs"
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search ID, Hub, Status..."
+                      className="pl-8 pr-3 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg w-full sm:w-56 focus:outline-none focus:ring-1 focus:ring-zinc-900"
                     />
-                    <button
-                      onClick={handleReschedule}
-                      disabled={!rescheduleDate}
-                      className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition"
-                    >
-                      Authorize Reschedule
-                    </button>
                   </div>
-                  {rescheduleSuccess && <p className="text-emerald-700 font-semibold text-[11px]">{rescheduleSuccess}</p>}
-                  {rescheduleError && <p className="text-rose-700 font-semibold text-[11px]">{rescheduleError}</p>}
+                  <button
+                    onClick={fetchOrders}
+                    className="p-2 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 border border-zinc-200/80 transition"
+                    title="Refresh Orders"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setActiveSubTab('booking')}
+                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-zinc-900 hover:bg-zinc-800 transition"
+                  >
+                    <PackagePlus className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Place Order</span>
+                  </button>
                 </div>
-              )}
+              </div>
 
-              {/* Immutable Timeline */}
-              <div className="pt-2 border-t border-zinc-100">
-                <div className="flex items-center space-x-1.5 text-xs font-bold text-zinc-900 mb-4">
-                  <Compass className="w-4 h-4 text-indigo-600" />
-                  <span>Immutable Audit Trail</span>
-                </div>
-
-                <div className="relative pl-4 space-y-4 border-l-2 border-zinc-100 ml-2">
-                  {timeline.length === 0 ? (
-                    <p className="text-zinc-400 text-xs">Awaiting log entries...</p>
-                  ) : (
-                    timeline.map((item) => (
-                      <div key={item.id} className="relative group">
-                        <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-zinc-900 border-2 border-white ring-2 ring-zinc-100"></div>
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-bold text-zinc-900 uppercase tracking-wide">{item.status}</span>
-                          <span className="text-[10px] font-mono text-zinc-400">
-                            {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-zinc-500 mt-0.5 leading-relaxed">{item.notes}</p>
-                      </div>
-                    ))
-                  )}
-                </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-xs text-left">
+                  <thead className="bg-zinc-50/75 text-zinc-500 font-bold uppercase text-[10px] tracking-wider border-y border-zinc-100">
+                    <tr>
+                      <th className="py-3 px-3">Order Token</th>
+                      <th className="py-3 px-3">Routing (Origin → Dest)</th>
+                      <th className="py-3 px-3">Tier</th>
+                      <th className="py-3 px-3">Invoice</th>
+                      <th className="py-3 px-3">Status</th>
+                      <th className="py-3 px-3 text-right">Inspect</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100 text-zinc-700 font-medium">
+                    {filteredOrders.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="text-center py-12 text-zinc-400">
+                          <Package className="w-10 h-10 text-zinc-300 mx-auto mb-2" />
+                          <p className="font-bold text-zinc-600 text-xs">No consignments found</p>
+                          <p className="text-[11px] text-zinc-400 mt-0.5">Click "Place Order" to book your first delivery.</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredOrders.map((o) => (
+                        <tr key={o.id} className="hover:bg-zinc-50/70 transition-colors">
+                          <td className="py-3 px-3 font-mono font-bold text-zinc-900">
+                            #{o.id.split('-')[0]}
+                          </td>
+                          <td className="py-3 px-3 font-semibold text-zinc-800">
+                            {o.pickupArea.name} <span className="text-zinc-400 font-normal">→</span> {o.dropArea.name}
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className="text-[10px] font-bold text-zinc-600 bg-zinc-100 px-1.5 py-0.5 rounded border border-zinc-200/50">
+                              {o.orderType}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 font-bold font-mono text-zinc-900">
+                            ₹{o.totalCharge.toFixed(2)}
+                          </td>
+                          <td className="py-3 px-3">{getStatusBadge(o.status)}</td>
+                          <td className="py-3 px-3 text-right">
+                            <button
+                              onClick={() => fetchOrderDetails(o.id)}
+                              className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-zinc-700 bg-zinc-100 hover:bg-zinc-900 hover:text-white transition"
+                            >
+                              <span>Inspect</span>
+                              <ChevronRight className="w-3 h-3" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
-          )}
+
+            {/* Selected Order Details Panel */}
+            {selectedOrder && (
+              <div className="lg:col-span-5 bg-white rounded-2xl border border-zinc-200/80 shadow-sm p-6 space-y-6 animate-fadeIn self-start">
+                <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs font-bold text-zinc-900 font-mono">
+                      #{selectedOrder.id.split('-')[0]}
+                    </span>
+                    {getStatusBadge(selectedOrder.status)}
+                  </div>
+                  <button
+                    onClick={() => setSelectedOrder(null)}
+                    className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Waybill Card */}
+                <div className="space-y-3 text-xs">
+                  <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200/70 space-y-2">
+                    <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Waypoint Route</div>
+                    <div className="space-y-1">
+                      <p className="text-zinc-600">
+                        <strong className="text-zinc-900">Pickup:</strong> {selectedOrder.pickupAddress} ({selectedOrder.pickupArea.name})
+                      </p>
+                      <p className="text-zinc-600">
+                        <strong className="text-zinc-900">Drop:</strong> {selectedOrder.dropAddress} ({selectedOrder.dropArea.name})
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="p-2.5 rounded-lg border border-zinc-200/70 bg-zinc-50">
+                      <span className="text-zinc-400 block text-[10px] font-bold uppercase">Dimensions</span>
+                      <span className="font-mono font-bold text-zinc-800">
+                        {selectedOrder.length}×{selectedOrder.width}×{selectedOrder.height} cm
+                      </span>
+                    </div>
+                    <div className="p-2.5 rounded-lg border border-zinc-200/70 bg-zinc-50">
+                      <span className="text-zinc-400 block text-[10px] font-bold uppercase">Mass</span>
+                      <span className="font-mono font-bold text-zinc-800">{selectedOrder.actualWeight} kg</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl border border-zinc-200/70 bg-zinc-50 flex items-center justify-between">
+                    <span className="text-zinc-500 font-semibold">Assigned Courier:</span>
+                    <span className="font-bold text-zinc-900">
+                      {selectedOrder.agent ? selectedOrder.agent.user.name : 'Awaiting Hub Match...'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Reschedule Flow if status is FAILED */}
+                {selectedOrder.status === 'FAILED' && (
+                  <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs space-y-3">
+                    <div className="flex items-center space-x-2 text-rose-800 font-bold">
+                      <AlertTriangle className="w-4 h-4 text-rose-600" />
+                      <span>Attempt Unsuccessful</span>
+                    </div>
+                    <p className="text-[11px] text-rose-700 leading-relaxed">
+                      The delivery executive was unable to complete handover. Please select a reschedule date to trigger auto-reassignment.
+                    </p>
+                    <div className="space-y-2">
+                      <input
+                        type="date"
+                        required
+                        min={new Date().toISOString().split('T')[0]}
+                        value={rescheduleDate}
+                        onChange={(e) => setRescheduleDate(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-white border border-rose-200 rounded-lg text-xs"
+                      />
+                      <button
+                        onClick={handleReschedule}
+                        disabled={!rescheduleDate}
+                        className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition"
+                      >
+                        Authorize Reschedule
+                      </button>
+                    </div>
+                    {rescheduleSuccess && <p className="text-emerald-700 font-semibold text-[11px]">{rescheduleSuccess}</p>}
+                    {rescheduleError && <p className="text-rose-700 font-semibold text-[11px]">{rescheduleError}</p>}
+                  </div>
+                )}
+
+                {/* Immutable Timeline */}
+                <div className="pt-2 border-t border-zinc-100">
+                  <div className="flex items-center space-x-1.5 text-xs font-bold text-zinc-900 mb-4">
+                    <Compass className="w-4 h-4 text-indigo-600" />
+                    <span>Immutable Audit Trail</span>
+                  </div>
+
+                  <div className="relative pl-4 space-y-4 border-l-2 border-zinc-100 ml-2">
+                    {timeline.length === 0 ? (
+                      <p className="text-zinc-400 text-xs">Awaiting log entries...</p>
+                    ) : (
+                      timeline.map((item) => (
+                        <div key={item.id} className="relative group">
+                          <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-zinc-900 border-2 border-white ring-2 ring-zinc-100"></div>
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="font-bold text-zinc-900 uppercase tracking-wide">{item.status}</span>
+                            <span className="text-[10px] font-mono text-zinc-400">
+                              {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-zinc-500 mt-0.5 leading-relaxed">{item.notes}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
-        </div>
-      </div>
     </div>
   );
 }
