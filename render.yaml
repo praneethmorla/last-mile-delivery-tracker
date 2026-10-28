@@ -12,3 +12,13 @@ services:
         generateValue: true
       - key: NODE_ENV
         value: production
+      - key: DATABASE_URL
+        value: "postgresql://neondb_owner:npg_wsaOBN69iGzp@ep-muddy-breeze-b8iujwmr-pooler.c-14.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+      - key: SMTP_HOST
+        value: "smtp.gmail.com"
+      - key: SMTP_PORT
+        value: "465"
+      - key: SMTP_USER
+        value: "praneethamorla4@gmail.com"
+      - key: SMTP_PASS
+        value: "jfteuvsrxajibdjf"
